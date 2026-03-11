@@ -24,4 +24,5 @@ export interface MatrixOptions {
   legendType: string;
   thresholds: any[];
   extraTooltipFields: string;
+  fitToPanel: boolean;
 }

@@ -16,11 +16,11 @@ import sanitizeHtml from 'sanitize-html';
  * @param {GrafanaTheme} theme
  * @param {CSSReturnValue} styles
  */
-function createViz(elem, id, height, rowNames, colNames, matrix, options, theme, legend, styles) {
+function createViz(elem, id, height, panelWidth, rowNames, colNames, matrix, options, theme, legend, styles) {
   const srcText = sanitizeHtml(options.sourceText),
     targetText = sanitizeHtml(options.targetText),
     valText = sanitizeHtml(options.valueText),
-    cellSize = options.cellSize,
+    cellSize_opt = options.cellSize,
     cellPadding = options.cellPadding / 100, // convert the cellPadding integer to a float that can be used by d3
     txtLength = options.txtLength,
     txtSize = options.txtSize / 10, //convert this val to EM scaling 90 = .9em 100 = 1em ... etc
@@ -60,6 +60,15 @@ function createViz(elem, id, height, rowNames, colNames, matrix, options, theme,
   var colTxtOffset = maxColTxtLength * txtSize * 5 + 25;
   var rowTxtOffset = maxRowTxtLength * txtSize * 5 + 25;
 
+  var cellSize = cellSize_opt;
+  if (options.fitToPanel && panelWidth > 0) {
+    var availableWidth = panelWidth - rowTxtOffset;
+    var maxCellSize = Math.floor(availableWidth / colNames.length);
+    if (maxCellSize < cellSize) {
+      cellSize = Math.max(maxCellSize, 1);
+    }
+  }
+
   // set the dimensions and margins of the graph
   var margin = { top: colTxtOffset, right: 0, bottom: 0, left: rowTxtOffset },
     width = colNames.length * cellSize,
@@ -78,14 +87,11 @@ function createViz(elem, id, height, rowNames, colNames, matrix, options, theme,
 
   // append the svg object to the body of the page
   var svgClass = `svg-${id}`;
-  var svg = d3
-    .select(elem)
-    .append('svg')
-    .attr('id', svgClass)
-    .attr('width', width + margin.left + margin.right)
-    .attr('height', height + margin.top + margin.bottom)
-    .append('g')
-    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+  var svgWidth = width + margin.left + margin.right;
+  var svgHeight = height + margin.top + margin.bottom;
+  var svgEl = d3.select(elem).append('svg').attr('id', svgClass);
+  svgEl.attr('width', svgWidth).attr('height', svgHeight);
+  var svg = svgEl.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
   // Build X scales and axis:
   var x = d3.scaleBand().range([0, width]).domain(colNames).padding(cellPadding);
@@ -455,11 +461,11 @@ const getStyles = (theme: GrafanaTheme2) => {
  * @param {number} height Height of panel
  * @return {*} A d3 callback
  */
-function matrix(rowNames, colNames, matrix, id, height, options, legend) {
+function matrix(rowNames, colNames, matrix, id, height, panelWidth, options, legend) {
   const theme = useTheme2();
   const styles = useStyles2(getStyles);
   const ref = useD3((svg) => {
-    createViz(svg, id, height, rowNames, colNames, matrix, options, theme, legend, styles);
+    createViz(svg, id, height, panelWidth, rowNames, colNames, matrix, options, theme, legend, styles);
   });
   return ref;
 }

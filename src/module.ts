@@ -182,6 +182,14 @@ plugin.setPanelOptions((builder) => {
     defaultValue: 'Value',
   });
 
+  builder.addBooleanSwitch({
+    path: 'fitToPanel',
+    name: 'Fit to Panel Width',
+    description: 'Scale the matrix to fit the panel width. Uses SVG viewBox scaling so all cells remain proportional.',
+    category: OptionsCategory,
+    defaultValue: false,
+  });
+
   builder.addTextInput({
     path: 'extraTooltipFields',
     name: 'Extra Tooltip Fields',
