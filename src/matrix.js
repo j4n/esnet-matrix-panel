@@ -201,6 +201,21 @@ function createViz(elem, id, height, rowNames, colNames, matrix, options, theme,
             var thisColumn =sanitizeHtml(d.col);
             var thisText = sanitizeHtml(d.display.text);
             var thisSuffix = sanitizeHtml(d.display.suffix);
+            var extrasHtml = '';
+            if (d.extras && d.extras.length > 0) {
+              d.extras.forEach(function(extra) {
+                var label = sanitizeHtml(extra.label);
+                var text = sanitizeHtml(extra.display.text);
+                var suffix = extra.display.suffix ? sanitizeHtml(extra.display.suffix) : '';
+                extrasHtml += `  <div class="${styles.tooltipTableCell}">
+    <div class="${styles.tooltipTableRowLabel}">${label}</div>
+  </div>
+  <div class="${styles.tooltipTableCell}">
+    <div class="${styles.tooltipTableRowValue}">${text}${suffix ? ' ' + suffix : ''}</div>
+  </div>
+`;
+              });
+            }
             var text = `<div class="${styles.tooltipTable}">
   <div class="${styles.tooltipTableCell}">
     <div class="${styles.tooltipTableRowLabel}">${srcText}</div>
@@ -220,7 +235,7 @@ function createViz(elem, id, height, rowNames, colNames, matrix, options, theme,
   <div class="${styles.tooltipTableCell}">
     <div class="${styles.tooltipTableRowValue}">${thisText} ${thisSuffix ? thisSuffix : ''}</div>
   </div>
-</div>`;
+${extrasHtml}</div>`;
             return text;
           })
           .transition()

@@ -46,6 +46,11 @@ export function parseData(data: { series: any[] }, options: any, theme: any) {
     : data.series.map((series: { fields: any[] }) =>
         series.fields.find((field: { type: string }) => field.type === 'number')
       );
+  // fall back to first number field when Grafana auto-merges multi-query series
+  // and renames "Value" to "Value #A", "Value #B", etc.
+  if (valueField[0] == null) {
+    valueField[0] = series.fields.find((field: any) => field.type === 'number');
+  }
   const valKey = valueField[0].name;
 
   // function that maps value to color specified by Standard Options panel.
@@ -107,6 +112,48 @@ export function parseData(data: { series: any[] }, options: any, theme: any) {
   ////////////////////////////
 
   // console.log(options);
+  // resolve extra tooltip fields (comma-separated field names)
+  // extra tooltip series: series[1], series[2], ... matched to extraTooltipFields labels
+  const extraFieldNames: string[] = options.extraTooltipFields
+    ? options.extraTooltipFields.split(',').map((s: string) => s.trim()).filter(Boolean)
+    : [];
+
+  // For each extra series, build a lookup map keyed by "sourceVal|targetVal".
+  // If Grafana auto-merged all queries into series[0] (columns become "Value #A/B/C/D"),
+  // fall back to using the (i+1)-th number field from series[0].
+  const mergedNumberFields = series.fields.filter((f: any) => f.type === 'number');
+  const extraLookups = extraFieldNames.map((label: string, i: number) => {
+    const extraSeries = data.series[i + 1];
+    const lookup: Record<string, any> = {};
+    if (extraSeries) {
+      // separate series case
+      const extraFrame = new DataFrameView(extraSeries);
+      const extraValField = extraSeries.fields.find((f: any) => f.type === 'number');
+      if (extraValField) {
+        extraFrame.forEach((row: any) => {
+          const key = `${row[sourceKey]}|${row[targetKey]}`;
+          const ev = row[extraValField.name];
+          lookup[key] = extraValField.display
+            ? extraValField.display(ev)
+            : { text: ev != null ? String(ev) : '', suffix: '' };
+        });
+      }
+    } else {
+      // merged series case: use (i+1)-th number field in series[0]
+      const extraField = mergedNumberFields[i + 1];
+      if (extraField) {
+        frame.forEach((row: any) => {
+          const key = `${row[sourceKey]}|${row[targetKey]}`;
+          const ev = row[extraField.name];
+          lookup[key] = extraField.display
+            ? extraField.display(ev)
+            : { text: ev != null ? String(ev) : '', suffix: '' };
+        });
+      }
+    }
+    return { label, lookup };
+  });
+
   // create data matrix
   let dataMatrix: any[][] = [];
   for (let i = 0; i < rowNames.length; i++) {
@@ -117,12 +164,18 @@ export function parseData(data: { series: any[] }, options: any, theme: any) {
     let c = colNames.indexOf(String(row[targetKey]));
     let v = row[valKey];
     if (r > -1 && c > -1) {
+      const key = `${row[sourceKey]}|${row[targetKey]}`;
+      const extras = extraLookups.map(({ label, lookup }: any) => ({
+        label,
+        display: lookup[key] ?? { text: '', suffix: '' },
+      }));
       dataMatrix[r][c] = {
         row: row[sourceKey],
         col: row[targetKey],
         val: v,
         color: colorMap(v),
         display: valueField[0].display(v),
+        extras,
       };
     }
   });

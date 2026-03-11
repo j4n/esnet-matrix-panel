@@ -182,6 +182,14 @@ plugin.setPanelOptions((builder) => {
     defaultValue: 'Value',
   });
 
+  builder.addTextInput({
+    path: 'extraTooltipFields',
+    name: 'Extra Tooltip Fields',
+    description: 'Comma-separated field names to include in the cell tooltip (e.g. "Loss,p10,p90").',
+    category: OptionsCategory,
+    defaultValue: '',
+  });
+
   builder.addNumberInput({
     path: 'cellSize',
     name: 'Cell Size',
