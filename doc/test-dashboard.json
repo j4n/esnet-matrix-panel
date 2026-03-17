@@ -1,0 +1,844 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 82,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #5: showLegend + categorical type shows colored circles per threshold bucket",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "categorical",
+        "nullColor": "#E6E6E6",
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Value"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value\nalpha,one,10\nalpha,two,50\nalpha,three,80\nbeta,one,25\nbeta,two,60\nbeta,three,90\ngamma,one,5\ngamma,two,45\ngamma,three,75",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 1: Categorical Legend",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #7: addUrl=true, click cell to navigate. Inspect <a> tags in DOM for xlink:href.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 0,
+        "y": 9
+      },
+      "id": 2,
+      "options": {
+        "addUrl": true,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": false,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "/d/test/detail?",
+        "urlVar1": "src",
+        "urlVar2": "dst",
+        "valueField": "value",
+        "valueText": "Value"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value\nrouterA,portX,30\nrouterA,portY,65\nrouterA,portZ,88\nrouterB,portX,12\nrouterB,portY,54\nrouterB,portZ,71\nrouterC,portX,43\nrouterC,portY,29\nrouterC,portZ,97",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 2: Data Links",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #8: inputList=true with fixed labels. Only 5 of 12 cells filled — rest show gray defaultColor.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 40
+              },
+              {
+                "color": "orange",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 7,
+        "y": 9
+      },
+      "id": 3,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 30,
+        "defaultColor": "#CCCCCC",
+        "extraTooltipFields": "",
+        "fitToPanel": true,
+        "inputList": true,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": false,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "City",
+        "staticColumns": "Q1,Q2,Q3,Q4",
+        "staticRows": "NYC,LA,Chicago",
+        "targetField": "target",
+        "targetText": "Quarter",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Revenue"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value\nNYC,Q1,100\nNYC,Q3,45\nLA,Q2,78\nChicago,Q1,62\nChicago,Q4,33",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 3: Static Rows/Columns",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #10: sortType=none — labels in data insertion order (node10 before node2).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 0,
+        "y": 15
+      },
+      "id": 4,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 20,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": false,
+        "sortType": "none",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Value"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value\nnode10,portB,55\nnode10,portA,42\nnode10,port2,18\nnode10,port1,73\nnode2,portB,61\nnode2,portA,34\nnode2,port2,89\nnode2,port1,27\nnode1,portB,46\nnode1,portA,92\nnode1,port2,15\nnode1,port1,68\nnodeA,portB,37\nnodeA,portA,83\nnodeA,port2,51\nnodeA,port1,24",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 4a: Sort=none",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #10: sortType=natural-asc — node1, node2, node10, nodeA (numeric-aware).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 5,
+        "y": 15
+      },
+      "id": 5,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 20,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": false,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Value"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value\nnode10,portB,55\nnode10,portA,42\nnode10,port2,18\nnode10,port1,73\nnode2,portB,61\nnode2,portA,34\nnode2,port2,89\nnode2,port1,27\nnode1,portB,46\nnode1,portA,92\nnode1,port2,15\nnode1,port1,68\nnodeA,portB,37\nnodeA,portA,83\nnodeA,port2,51\nnodeA,port1,24",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 4b: Sort=natural-asc",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #10: sortType=natural-desc — nodeA, node10, node2, node1 (reverse).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 10,
+        "y": 15
+      },
+      "id": 6,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 20,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": false,
+        "sortType": "natural-desc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Value"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value\nnode10,portB,55\nnode10,portA,42\nnode10,port2,18\nnode10,port1,73\nnode2,portB,61\nnode2,portA,34\nnode2,port2,89\nnode2,port1,27\nnode1,portB,46\nnode1,portA,92\nnode1,port2,15\nnode1,port1,68\nnodeA,portB,37\nnodeA,portA,83\nnodeA,port2,51\nnodeA,port1,24",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 4c: Sort=natural-desc",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #11: Null values → red (#FF4444), missing pairs → gray (#AAAAAA). 10 of 16 cells filled, 2 nulls.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "orange",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 0,
+        "y": 21
+      },
+      "id": 7,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "defaultColor": "#AAAAAA",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#FF4444",
+        "showLegend": false,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "Source",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "Service",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Latency"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value\neast,http,42\neast,dns,\neast,smtp,88\nwest,http,15\nwest,dns,63\nnorth,http,\nnorth,smtp,71\nsouth,ssh,29\nsouth,http,55\nsouth,dns,91",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 5: Null + Missing Data",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #12: Multiple string+number fields. sourceField/targetField/valueField select non-default fields.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 5,
+        "y": 21
+      },
+      "id": 8,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "Source Site",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "Target Site",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Latency (ms)"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "name,source,target,ignored_num,value\nlink1,siteA,siteX,999,42\nlink2,siteA,siteY,999,67\nlink3,siteA,siteZ,999,88\nlink4,siteB,siteX,999,23\nlink5,siteB,siteY,999,51\nlink6,siteB,siteZ,999,74\nlink7,siteC,siteX,999,36\nlink8,siteC,siteY,999,95\nlink9,siteC,siteZ,999,14",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 6: Field Pickers",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #13: Panel saved without sortType option — migration handler should default to natural-asc.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 28
+      },
+      "id": 9,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": false,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Value"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value\nzebra,cat,40\nzebra,ant,80\nzebra,bear,20\napple,cat,60\napple,ant,10\napple,bear,90\nmango,cat,35\nmango,ant,70\nmango,bear,55",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 7: Migration (no sortType)",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #14: No data returned — panel should display 'No Data' message.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 28
+      },
+      "id": 10,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 15,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": false,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Value"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 8: Empty Query → No Data",
+      "type": "esnet-matrix-panel"
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 39,
+  "tags": [
+    "test",
+    "matrix"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "ESnet Matrix Panel - Test Suite",
+  "uid": "cfg9sigrhpkaob",
+  "version": 1,
+  "weekStart": ""
+}
