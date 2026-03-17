@@ -152,7 +152,8 @@ export function parseData(data: PanelData, options: MatrixOptions, theme: Grafan
   if (options.showLegend) {
     let tempValues: (number | string)[] = [];
     if (options.legendType === 'range') {
-      const allValues: number[] = Object.values(frame.fields[valKey].values);
+      const allValues: number[] = Object.values(frame.fields[valKey].values)
+        .filter((v): v is number => typeof v === 'number' && !isNaN(v));
       const min = Math.min(...allValues);
       const max = Math.max(...allValues);
       const step = (max - min) / 10;

@@ -217,16 +217,16 @@ ${extrasHtml}</div>`)
   // Legend
   if (options.showLegend && legend.length > 0) {
     const legendClass = `legend-${id}`;
-    select(elem)
-      .append('div')
-      .attr('class', `matrix-legend-${id}`)
-      .append('svg')
-      .attr('id', legendClass);
-
-    const legendSvg = select(`#${legendClass}`);
 
     if (options.legendType === 'range') {
-      // Range legend: color bar with min/max labels
+      // Range legend: SVG color bar with min/max labels
+      select(elem)
+        .append('div')
+        .attr('class', `matrix-legend-${id}`)
+        .append('svg')
+        .attr('id', legendClass);
+
+      const legendSvg = select(`#${legendClass}`);
       legendSvg
         .attr('width', 25 + (legend.length - 1) * 10 + legend[legend.length - 1].label.length * 9)
         .attr('height', 50 + 16)
@@ -251,29 +251,33 @@ ${extrasHtml}</div>`)
         .text((d, i) => (i === 0 || i === legend.length - 1) ? d.label : '')
         .attr('fill', theme.colors.text.primary);
     } else {
-      // Categorical legend: circles with labels
-      legendSvg
-        .attr('width', 25 + (legend.length - 1) * 75 + 20 + legend[legend.length - 1].label.length * 9)
-        .attr('height', 50 + 16)
-        .append('g')
-        .selectAll('circle')
-        .data(legend)
-        .enter()
-        .append('circle')
-        .attr('class', `legend-circle-${id}`)
-        .attr('r', 10)
-        .attr('fill', (d) => d.color)
-        .attr('cx', (_d, i) => 25 + i * 75)
-        .attr('cy', 20);
-      legendSvg.append('g')
-        .selectAll('text')
-        .data(legend)
-        .enter()
-        .append('text')
-        .attr('x', (_d, i) => 15 + i * 75)
-        .attr('y', 50)
-        .text((d) => d.label)
-        .attr('fill', theme.colors.text.primary);
+      // Categorical legend: HTML flexbox (wraps naturally within panel width)
+      const legendDiv = select(elem)
+        .append('div')
+        .attr('class', `matrix-legend-${id}`)
+        .style('display', 'flex')
+        .style('flex-wrap', 'wrap')
+        .style('gap', '8px 16px')
+        .style('padding', '8px 0')
+        .style('align-items', 'center');
+
+      for (const item of legend) {
+        const entry = legendDiv.append('div')
+          .style('display', 'flex')
+          .style('align-items', 'center')
+          .style('gap', '6px');
+        entry.append('div')
+          .style('width', '12px')
+          .style('height', '12px')
+          .style('border-radius', '50%')
+          .style('background-color', item.color)
+          .style('flex-shrink', '0');
+        entry.append('span')
+          .style('font-family', theme.typography.fontFamily)
+          .style('font-size', theme.typography.size.sm)
+          .style('color', theme.colors.text.primary)
+          .text(item.label);
+      }
     }
   }
 }
