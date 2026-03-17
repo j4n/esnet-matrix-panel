@@ -1,4 +1,4 @@
-import { FieldOverrideContext, getFieldDisplayName, PanelPlugin, FieldConfigProperty } from '@grafana/data';
+import { Field, FieldConfigProperty, FieldConfigSource, FieldType, PanelPlugin } from '@grafana/data';
 // import { standardOptionsCompat } from 'grafana-plugin-support';
 import { MatrixOptions } from './types';
 import { EsnetMatrix } from './EsnetMatrix';
@@ -43,8 +43,31 @@ plugin.useFieldConfig({
   ]
 });
 
+plugin.setMigrationHandler((panel: { options: any; fieldConfig: FieldConfigSource }) => {
+  if (panel.options.sortType === undefined) {
+    panel.options.sortType = 'natural-asc'
+  }
+
+  return panel.options;
+});
+
 plugin.setPanelOptions((builder) => {
   /////////--------- Row and Column options ---------////////////////
+  builder.addSelect({
+    path: 'sortType',
+    name: 'Sort Type',
+    description: 'Sorting to apply to row/column names',
+    category: RowOptions,
+    defaultValue: 'natural-asc',
+    settings: {
+      allowCustomValue: false,
+      options: [
+        { value: 'none', label: 'None' },
+        { value: 'natural-asc', label: 'Natural ascending' },
+        { value: 'natural-desc', label: 'Natural descending' },
+      ],
+    },
+  });
   builder.addBooleanSwitch({
     path: 'inputList',
     name: 'Use Static Row/Column Lists',
@@ -65,76 +88,32 @@ plugin.setPanelOptions((builder) => {
     category: RowOptions,
     showIf: staticBool(true),
   });
-  builder.addSelect({
+  builder.addFieldNamePicker({
     path: 'sourceField',
     name: 'Rows Field',
     description: 'Select the field that should be used for the rows',
     category: RowOptions,
     settings: {
-      allowCustomValue: false,
-      options: [],
-      getOptions: async (context: FieldOverrideContext) => {
-        const options = [];
-        if (context && context.data) {
-          for (const frame of context.data) {
-            for (const field of frame.fields) {
-              const name = getFieldDisplayName(field, frame, context.data);
-              const value = name;
-              options.push({ value, label: name });
-            }
-          }
-        }
-        return Promise.resolve(options);
-      },
+      filter: (field: Field) => field.type === FieldType.string,
     },
-    // defaultValue: options[0],
   });
-  builder.addSelect({
+  builder.addFieldNamePicker({
     path: 'targetField',
     name: 'Columns Field',
     description: 'Select the field to use for the columns',
     category: RowOptions,
     settings: {
-      allowCustomValue: false,
-      options: [],
-      getOptions: async (context: FieldOverrideContext) => {
-        const options = [];
-        if (context && context.data) {
-          for (const frame of context.data) {
-            for (const field of frame.fields) {
-              const name = getFieldDisplayName(field, frame, context.data);
-              const value = name;
-              options.push({ value, label: name });
-            }
-          }
-        }
-        return Promise.resolve(options);
-      },
+      filter: (field: Field) => field.type === FieldType.string,
     },
   });
-  builder.addSelect({
+  builder.addFieldNamePicker({
     path: 'valueField',
     name: 'Value Field',
     description: 'Select the numeric field used to color the matrix cells.',
     category: RowOptions,
     settings: {
-      allowCustomValue: false,
-      options: [],
-      getOptions: async (context: FieldOverrideContext) => {
-        const options = [];
-        if (context && context.data) {
-          for (const frame of context.data) {
-            for (const field of frame.fields) {
-              const name = getFieldDisplayName(field, frame, context.data);
-              const value = name;
-              options.push({ value, label: name });
-            }
-          }
-        }
-        return Promise.resolve(options);
-      },
+      filter: (field: Field) => field.type === FieldType.number,
     },
-    // defaultValue: options[2],
   });
 
   ////////------------ General Matrix Options ----------------/////////////

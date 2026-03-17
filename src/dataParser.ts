@@ -1,21 +1,21 @@
-import { DataFrameView } from '@grafana/data';
+import { DataFrameView, Field, FieldType, GrafanaTheme2, PanelData, getFieldDisplayName } from '@grafana/data';
+import { DataMatrixCell, LegendData, MatrixData, MatrixOptions } from './types';
 
 // import { legend } from 'matrixLegend';
 
 /**
- * this function creates an adjacency matrix to be consumed by the chord
+ * this function creates an adjacency matrix to be consumed by the matrix diagram
  * function returns the matrix + forward and reverse lookup Maps to go from
  * source and target id to description assumes that data coming to us has at
  * least 3 columns if no preferences provided, assumes the first 3 columns are
  * source and target dimensions then value to display
- * @param {*} data Data for the chord diagram
- * @param {string} src The data series that will act as the source
- * @param {string} target The data series that will act as * the target
- * @param {string} val The data series that will act as the value
- * @return {[rowNames, colNames, dataMatrix]}
+ * @param {PanelData} data Data for the matrix diagram
+ * @param {MatrixOptions} options Panel configuration
+ * @param {GrafanaTheme2} theme Grafana theme
+ * @return {MatrixData}
  */
 
-export function parseData(data: { series: any[] }, options: any, theme: any) {
+export function parseData(data: PanelData, options: MatrixOptions, theme: GrafanaTheme2): MatrixData {
   const series = data.series[0];
   if (series === null || series === undefined) {
     // no data, bail
@@ -30,65 +30,103 @@ export function parseData(data: { series: any[] }, options: any, theme: any) {
     return { rows: null, columns: null, data: null, legend: null };
   }
   // set fields
-  let sourceKey = options.sourceField;
-  let targetKey = options.targetField;
-  if (!sourceKey) {
-    sourceKey = 0;
-  }
-  if (!targetKey) {
-    targetKey = 1;
+  const sourceField = series.fields.find((f: Field) =>
+    options.sourceField !== undefined && (
+      options.sourceField === f.name
+      || options.sourceField === f.config?.displayNameFromDS
+      || options.sourceField === getFieldDisplayName(f)
+    )
+  ) ?? series.fields.find((f: Field) => f.type === FieldType.string);
+  const targetField = series.fields.find((f: Field) =>
+    options.targetField !== undefined && (
+      options.targetField === f.name
+      || options.targetField === f.config?.displayNameFromDS
+      || options.targetField === getFieldDisplayName(f)
+    )
+  ) ?? series.fields.find((f: Field) => f.type === FieldType.string && f.name !== sourceField?.name);
+  const sourceKey = sourceField?.name;
+  const targetKey = targetField?.name;
+
+  if (sourceKey === undefined || targetKey === undefined) {
+    // no data, bail
+    console.error('no data');
+    return { rows: null, columns: null, data: null, legend: null };
   }
 
   // assign valueField to the specified field or use the first number field by default
-  const val = options.valueField;
-  const valueField = val
-    ? data.series.map((series: { fields: any[] }) => series.fields.find((field: { name: any }) => field.name === val))
-    : data.series.map((series: { fields: any[] }) =>
-        series.fields.find((field: { type: string }) => field.type === 'number')
-      );
-  // fall back to first number field when Grafana auto-merges multi-query series
-  // and renames "Value" to "Value #A", "Value #B", etc.
-  if (valueField[0] == null) {
-    valueField[0] = series.fields.find((field: any) => field.type === 'number');
+  const valueField: any = series.fields.find((f: Field) =>
+    options.valueField !== undefined && (
+      options.valueField === f.name
+      || options.valueField === f.config?.displayNameFromDS
+      || options.valueField === getFieldDisplayName(f)
+    )
+  ) ?? series.fields.find((f: Field) => f.type === FieldType.number);
+  const valKey = valueField?.name;
+
+  if (valueField === undefined || valKey === undefined) {
+    // no data, bail
+    console.error('no data');
+    return { rows: null, columns: null, data: null, legend: null };
   }
-  const valKey = valueField[0].name;
 
   // function that maps value to color specified by Standard Options panel.
   // if value is null or was not returned by query, use different value
   const nullColor = theme.visualization.getColorByName(options.nullColor);
   const defaultColor = theme.visualization.getColorByName(options.defaultColor);
-  function colorMap(v: any) {
-    if (v == null) {
+  function colorMap(v: any): string {
+    if (v === null) {
       return nullColor;
     } else if (v === -1) {
       return defaultColor;
     } else {
-      return valueField[0].display(v).color;
+      return valueField.display(v).color;
     }
   }
 
   // Make Row and Column Lists
-  let rows: any[] = [];
-  let columns: any[] = [];
+  let rows: string[] = [];
+  let columns: string[] = [];
   // let uniqueVals: any[] = [];
 
   // IF static list toggle is set, use input list
   if (options.inputList) {
-    rows = options.staticRows.split(',');
-    columns = options.staticColumns.split(',');
+    if (options.staticRows !== undefined) {
+      rows = options.staticRows.split(',');
+    }
+    if (options.staticColumns !== undefined) {
+      columns = options.staticColumns.split(',');
+    }
   } else {
     // ELSE  Make new arrays from unique set of row and column axis labels
     // find all axis labels
-    frame.forEach((row) => {
-      rows.push(String(row[sourceKey]));
-      columns.push(String(row[targetKey]));
-    });
+    rows = Array.from(new Set(sourceField.values));
+    columns = Array.from(new Set(targetField.values));
   }
-  // get unique set
-  const rowNames = Array.from(new Set(rows)).sort();
-  const colNames = Array.from(new Set(columns)).sort();
 
-  const numSquaresInMatrix = rowNames.length * colNames.length;
+  if (rows.length === 0 || columns.length === 0) {
+    // no data, bail
+    console.error('no data');
+    return { rows: null, columns: null, data: null, legend: null };
+  }
+
+  switch(options.sortType) {
+  case "natural-asc":
+  case "natural-desc":
+    const naturalSort = (a: any, b: any) => {
+      return a.toString().localeCompare(b.toString(), undefined, { numeric: true });
+    };
+
+    let sort = naturalSort;
+    if (options.sortType.endsWith("-desc")) {
+      sort = (a, b) => naturalSort(b, a);
+    }
+
+    rows.sort(sort);
+    columns.sort(sort);
+    break;
+  }
+
+  const numSquaresInMatrix = rows.length * columns.length;
   if (numSquaresInMatrix > 50000) {
     return { rows: null, columns: null, data: 'too many inputs', legend: null };
   }
@@ -155,13 +193,13 @@ export function parseData(data: { series: any[] }, options: any, theme: any) {
   });
 
   // create data matrix
-  let dataMatrix: any[][] = [];
-  for (let i = 0; i < rowNames.length; i++) {
-    dataMatrix.push(new Array(colNames.length).fill(-1));
+  const dataMatrix: DataMatrixCell[][] = [];
+  for (let i = 0; i < rows.length; i++) {
+    dataMatrix.push(new Array(columns.length).fill(-1));
   }
   frame.forEach((row) => {
-    let r = rowNames.indexOf(String(row[sourceKey]));
-    let c = colNames.indexOf(String(row[targetKey]));
+    let r = rows.indexOf(String(row[sourceKey]));
+    let c = columns.indexOf(String(row[targetKey]));
     let v = row[valKey];
     if (r > -1 && c > -1) {
       const key = `${row[sourceKey]}|${row[targetKey]}`;
@@ -174,14 +212,14 @@ export function parseData(data: { series: any[] }, options: any, theme: any) {
         col: row[targetKey],
         val: v,
         color: colorMap(v),
-        display: valueField[0].display(v),
+        display: valueField.display(v),
         extras,
       };
     }
   });
 
   // parse data for legend
-  let legendData: any[] = [];
+  const legendData: LegendData[] = [];
   if (options.showLegend) {
     
     // let allVals = frame.fields[valKey].values;
@@ -206,9 +244,9 @@ export function parseData(data: { series: any[] }, options: any, theme: any) {
     tempValues.forEach((val) => {
       // find display values, unit & color for each
       // store in array
-      let text = valueField[0].display(val).text;
-      if (valueField[0].display(val).suffix) {
-        text = text + ` ${valueField[0].display(val).suffix}`;
+      let text = valueField.display(val).text;
+      if (valueField.display(val).suffix) {
+        text = text + ` ${valueField.display(val).suffix}`;
       }
         legendData.push({
           label: text,
@@ -218,6 +256,6 @@ export function parseData(data: { series: any[] }, options: any, theme: any) {
   }
   // console.log(legendData);
 
-  let dataObject = { rows: rowNames, columns: colNames, data: dataMatrix, legend: legendData };
+  const dataObject = { rows: rows, columns: columns, data: dataMatrix, legend: legendData };
   return dataObject;
 }
