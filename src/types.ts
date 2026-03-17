@@ -1,7 +1,7 @@
 import { DisplayValue } from '@grafana/data';
 
 export interface MatrixOptions {
-  sortType: string;
+  sortType: 'none' | 'natural-asc' | 'natural-desc';
   sourceField: string;
   targetField: string;
   valueField: string;
@@ -18,34 +18,37 @@ export interface MatrixOptions {
   url: string;
   urlVar1: string;
   urlVar2: string;
-  urlOther: boolean;
-  urlOtherText: string;
   inputList: boolean;
   staticRows: string;
   staticColumns: string;
   showLegend: boolean;
   legendType: string;
-  thresholds: any[];
   extraTooltipFields: string;
   fitToPanel: boolean;
 }
 
-export type MatrixData = {
-  rows: string[] | null;
-  columns: string[] | null;
-  data: DataMatrixCell[][] | string | null;
-  legend: LegendData[] | null;
-};
+export interface ExtraTooltipField {
+  label: string;
+  display: { text: string; suffix?: string };
+}
 
-export type DataMatrixCell = {
+export interface CellData {
   row: string;
   col: string;
   val: number;
   color: string;
   display: DisplayValue;
-};
+  extras: ExtraTooltipField[];
+}
 
-export type LegendData = {
+export interface LegendItem {
   label: string;
   color: string;
-};
+}
+
+export interface ParsedData {
+  rows: string[] | null;
+  columns: string[] | null;
+  data: CellData[][] | string | null;
+  legend: LegendItem[] | null;
+}

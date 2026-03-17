@@ -1,58 +1,39 @@
 import { Field, FieldConfigProperty, FieldConfigSource, FieldType, PanelPlugin } from '@grafana/data';
-// import { standardOptionsCompat } from 'grafana-plugin-support';
 import { MatrixOptions } from './types';
-import { EsnetMatrix } from './EsnetMatrix';
-// import { FieldConfig } from './panelcfg.gen';
+import { MatrixPanel } from './MatrixPanel';
 
-/**
- * Grafana panel plugin main module
- *
- * @param {*} { panel:
- *  React.ComponentType<PanelProps<NetSageSankeyOptions>> | null
- * }
- * @return {*} { builder: PanelOptionsEditorBuilder<NetSageSankeyOptions> }
- */
 const OptionsCategory = ['Display'];
 const URLCategory = ['Link Options'];
 const RowOptions = ['Row/Column Options'];
 
-const urlBool = (addUrl: boolean) => (config: MatrixOptions) => config.addUrl === addUrl;
-// const eurlOtherBool = (urlOther: boolean) => (config: MatrixOptions) => config.urlOther === urlOther;
-const staticBool = (inputList: boolean) => (config: MatrixOptions) => config.inputList === inputList;
-const legendBool = (showLegend: boolean) => (config: MatrixOptions) => config.showLegend === showLegend;
+const urlBool = (v: boolean) => (config: MatrixOptions) => config.addUrl === v;
+const staticBool = (v: boolean) => (config: MatrixOptions) => config.inputList === v;
+const legendBool = (v: boolean) => (config: MatrixOptions) => config.showLegend === v;
 
-// const buildStandardOptions = (): any => {
-//   const options = [FieldConfigProperty.Unit, FieldConfigProperty.Color, FieldConfigProperty.Thresholds];
-//   return standardOptionsCompat(options);
-// };
-
-export const plugin = new PanelPlugin<MatrixOptions>(EsnetMatrix);
+export const plugin = new PanelPlugin<MatrixOptions>(MatrixPanel);
 
 plugin.useFieldConfig({
   standardOptions: {
     [FieldConfigProperty.Thresholds]: {},
     [FieldConfigProperty.Color]: {
-      settings: {
-        preferThresholdMode: true,
-      }
-    }
+      settings: { preferThresholdMode: true },
+    },
   },
   disableStandardOptions: [
     FieldConfigProperty.NoValue,
     FieldConfigProperty.Links,
-  ]
+  ],
 });
 
-plugin.setMigrationHandler((panel: { options: any; fieldConfig: FieldConfigSource }) => {
+plugin.setMigrationHandler((panel: { options: MatrixOptions; fieldConfig: FieldConfigSource }) => {
   if (panel.options.sortType === undefined) {
-    panel.options.sortType = 'natural-asc'
+    panel.options.sortType = 'natural-asc';
   }
-
   return panel.options;
 });
 
 plugin.setPanelOptions((builder) => {
-  /////////--------- Row and Column options ---------////////////////
+  // Row/Column Options
   builder.addSelect({
     path: 'sortType',
     name: 'Sort Type',
@@ -77,14 +58,14 @@ plugin.setPanelOptions((builder) => {
   builder.addTextInput({
     path: 'staticRows',
     name: 'Row Array',
-    description: 'Terms to use as matrix rows (comma separated)',
+    description: 'Labels to use as matrix rows (comma separated)',
     category: RowOptions,
     showIf: staticBool(true),
   });
   builder.addTextInput({
     path: 'staticColumns',
     name: 'Column Array',
-    description: 'Terms to use as matrix columns (comma separated)',
+    description: 'Labels to use as matrix columns (comma separated)',
     category: RowOptions,
     showIf: staticBool(true),
   });
@@ -116,7 +97,7 @@ plugin.setPanelOptions((builder) => {
     },
   });
 
-  ////////------------ General Matrix Options ----------------/////////////
+  // Display Options
   builder.addBooleanSwitch({
     path: 'showLegend',
     name: 'Show Legend',
@@ -144,7 +125,6 @@ plugin.setPanelOptions((builder) => {
     category: OptionsCategory,
     defaultValue: 'From',
   });
-
   builder.addTextInput({
     path: 'targetText',
     name: 'Target Text',
@@ -152,7 +132,6 @@ plugin.setPanelOptions((builder) => {
     category: OptionsCategory,
     defaultValue: 'To',
   });
-
   builder.addTextInput({
     path: 'valueText',
     name: 'value Text',
@@ -160,7 +139,6 @@ plugin.setPanelOptions((builder) => {
     category: OptionsCategory,
     defaultValue: 'Value',
   });
-
   builder.addBooleanSwitch({
     path: 'fitToPanel',
     name: 'Fit to Panel Width',
@@ -168,7 +146,6 @@ plugin.setPanelOptions((builder) => {
     category: OptionsCategory,
     defaultValue: false,
   });
-
   builder.addTextInput({
     path: 'extraTooltipFields',
     name: 'Extra Tooltip Fields',
@@ -176,61 +153,36 @@ plugin.setPanelOptions((builder) => {
     category: OptionsCategory,
     defaultValue: '',
   });
-
   builder.addNumberInput({
     path: 'cellSize',
     name: 'Cell Size',
     description: 'Adjust the size in pixels that each matrix cell should use.',
     category: OptionsCategory,
-    settings: {
-      placeholder: 'Auto',
-      integer: true,
-      min: 10,
-      max: 50,
-    },
+    settings: { placeholder: 'Auto', integer: true, min: 10, max: 50 },
     defaultValue: 15,
   });
-
   builder.addNumberInput({
     path: 'cellPadding',
     name: 'Cell Padding',
-    description:
-      'Adjust the padding between the matrix cells. Note that this is a relative size and does not directly translate to pixels.',
+    description: 'Adjust the padding between the matrix cells (relative, not pixels).',
     category: OptionsCategory,
-    settings: {
-      placeholder: 'Auto',
-      integer: true,
-      min: 0,
-      max: 100,
-    },
+    settings: { placeholder: 'Auto', integer: true, min: 0, max: 100 },
     defaultValue: 5,
   });
-
   builder.addNumberInput({
     path: 'txtLength',
     name: 'Text Length',
-    description: 'adjust amount of space used for labels',
+    description: 'Adjust amount of space used for labels',
     category: OptionsCategory,
-    settings: {
-      placeholder: 'Auto',
-      integer: true,
-      min: 1,
-      max: 300,
-    },
+    settings: { placeholder: 'Auto', integer: true, min: 1, max: 300 },
     defaultValue: 50,
   });
-
   builder.addNumberInput({
     path: 'txtSize',
     name: 'Text Size',
-    description: 'adjust the size of the text labels',
+    description: 'Adjust the size of the text labels',
     category: OptionsCategory,
-    settings: {
-      placeholder: 'Auto',
-      integer: true,
-      min: 1,
-      max: 200,
-    },
+    settings: { placeholder: 'Auto', integer: true, min: 1, max: 200 },
     defaultValue: 10,
   });
   builder.addColorPicker({
@@ -248,7 +200,7 @@ plugin.setPanelOptions((builder) => {
     defaultValue: '#E6E6E6',
   });
 
-  /////////----------- Link URL options ---------------////////////////
+  // Link Options
   builder.addBooleanSwitch({
     path: 'addUrl',
     name: 'Add Data Link',
@@ -276,19 +228,4 @@ plugin.setPanelOptions((builder) => {
     category: URLCategory,
     showIf: urlBool(true),
   });
-  // builder.addBooleanSwitch({
-  //   path: 'urlOther',
-  //   name: 'Append more text',
-  //   description: 'Ex: date',
-  //   category: URLCategory,
-  //   defaultValue: true,
-  //   showIf: urlBool(true),
-  // });
-  // builder.addTextInput({
-  //   path: 'urlOtherText',
-  //   name: 'Text',
-  //   description: 'Other text to append to URL',
-  //   category: URLCategory,
-  //   showIf: urlOtherBool(true),
-  // });
 });
