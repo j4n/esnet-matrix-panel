@@ -1,11 +1,16 @@
 import { GrafanaTheme2 } from '@grafana/data';
 import { select, local } from 'd3-selection';
-import { scaleBand } from 'd3-scale';
-import { axisTop, axisLeft } from 'd3-axis';
 import 'd3-transition';
 import { escapeHtml } from './escapeHtml';
-import { CellData, LegendItem, MatrixOptions, ParsedData } from './types';
+import { CellData, MatrixOptions, ParsedData } from './types';
 import { TooltipStyles, moveTooltip, truncateLabel } from './tooltip';
+
+interface PositionEntry {
+  name: string;
+  pos: number;    // x for columns, y for rows
+  category: string;
+  categoryIndex: number;
+}
 
 /**
  * Render the matrix diagram into the given DOM element using D3.
@@ -21,6 +26,8 @@ export function createViz(
 ): void {
   const rowNames = parsedData.rows!;
   const colNames = parsedData.columns!;
+  const colCategories = parsedData.colCategories;
+  const rowCategories = parsedData.rowCategories;
   const matrix = parsedData.data as (CellData | number)[][];
   const legend = parsedData.legend!;
 
@@ -57,9 +64,87 @@ export function createViz(
     }
   }
 
-  const margin = { top: colTxtOffset, right: 0, bottom: 0, left: rowTxtOffset };
-  const width = colNames.length * cellSize;
-  const height = rowNames.length * cellSize;
+  const hasColGrouping = options.enableColGrouping && colCategories && colCategories.length > 0;
+  const hasRowGrouping = options.enableRowGrouping && rowCategories && rowCategories.length > 0;
+
+  // Category header dimensions
+  const colCategoryHeaderHeight = hasColGrouping
+    ? (options.colCategoryHeaderHeight ?? 40) : 0;
+  const colCategoryGap = hasColGrouping
+    ? (options.colCategoryGap ?? 4) : 0;
+  const rowCategoryHeaderWidth = hasRowGrouping
+    ? (options.rowCategoryHeaderWidth ?? 100) : 0;
+  const rowCategoryGap = hasRowGrouping
+    ? (options.rowCategoryGap ?? 4) : 0;
+
+  // Build column positions (with optional category gaps)
+  const columnPositions: PositionEntry[] = [];
+  let totalWidth = 0;
+
+  if (hasColGrouping) {
+    colCategories.forEach((category, catIndex) => {
+      for (const colName of category.columns) {
+        columnPositions.push({
+          name: colName,
+          pos: totalWidth,
+          category: category.name,
+          categoryIndex: catIndex,
+        });
+        totalWidth += cellSize;
+      }
+      if (catIndex < colCategories.length - 1) {
+        totalWidth += colCategoryGap;
+      }
+    });
+  } else {
+    for (const colName of colNames) {
+      columnPositions.push({ name: colName, pos: totalWidth, category: '', categoryIndex: 0 });
+      totalWidth += cellSize;
+    }
+  }
+
+  // Build row positions (with optional category gaps)
+  const rowPositions: PositionEntry[] = [];
+  let totalHeight = 0;
+
+  if (hasRowGrouping) {
+    rowCategories.forEach((category, catIndex) => {
+      for (const rowName of category.rows) {
+        rowPositions.push({
+          name: rowName,
+          pos: totalHeight,
+          category: category.name,
+          categoryIndex: catIndex,
+        });
+        totalHeight += cellSize;
+      }
+      if (catIndex < rowCategories.length - 1) {
+        totalHeight += rowCategoryGap;
+      }
+    });
+  } else {
+    for (const rowName of rowNames) {
+      rowPositions.push({ name: rowName, pos: totalHeight, category: '', categoryIndex: 0 });
+      totalHeight += cellSize;
+    }
+  }
+
+  // Custom scale functions: map name -> position
+  const colPosMap = new Map(columnPositions.map((cp) => [cp.name, cp.pos]));
+  const rowPosMap = new Map(rowPositions.map((rp) => [rp.name, rp.pos]));
+
+  const xPos = (name: string): number => colPosMap.get(name) ?? 0;
+  const yPos = (name: string): number => rowPosMap.get(name) ?? 0;
+  const bandwidth = cellSize * (1 - cellPadding);
+
+  const margin = {
+    top: colTxtOffset + colCategoryHeaderHeight,
+    right: 0,
+    bottom: 0,
+    left: rowTxtOffset + rowCategoryHeaderWidth,
+  };
+  const width = totalWidth;
+  const height = totalHeight;
 
   // Clear previous contents
   elem.replaceChildren();
@@ -78,34 +163,97 @@ export function createViz(
   const svg = svgEl.append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
 
-  // X axis (columns, top)
-  const x = scaleBand<string>().range([0, width]).domain(colNames).padding(cellPadding);
-  svg.append('g').call(axisTop(x)).select('.domain').remove();
-  svg.selectAll<SVGTextElement, string>('text')
-    .attr('style', 'text-anchor:start')
-    .attr('transform', 'translate(12,-12)rotate(-90)');
-
-  // Y axis (rows, left, reversed)
-  const y = scaleBand<string>().range([height, 0]).domain(rowNames.slice().reverse()).padding(cellPadding);
-  svg.append('g').call(axisLeft(y)).select('.domain').remove();
-
-  // Style all axis labels
-  svg.selectAll<SVGTextElement, string>('text')
-    .attr('font-size', txtSize + 'em')
-    .style('font-family', theme.typography.fontFamily)
-    .attr('fill', theme.colors.text.primary)
-    .call(truncateLabel, txtLength)
-    .on('mouseover', function (_event: MouseEvent, d: string) {
-      tooltip.html(escapeHtml(d))
+  // Helper: attach label tooltip events
+  function addLabelTooltip(sel: any, labelText: string) {
+    sel.on('mouseover', function (_event: MouseEvent) {
+      tooltip.html(escapeHtml(labelText))
         .transition().duration(150).style('opacity', 1);
     })
     .on('mousemove', function (event: MouseEvent) {
       moveTooltip(event, elem, tooltip);
     })
     .on('mouseout', function () {
-      select(this).attr('opacity', '1');
       tooltip.transition().delay(100).duration(150).style('opacity', 0);
     });
+  }
+
+  // X axis labels (columns, rotated at top)
+  const xAxisGroup = svg.append('g').attr('class', 'x-axis');
+  for (const cp of columnPositions) {
+    const label = xAxisGroup.append('text')
+      .attr('transform', `translate(${cp.pos + cellSize / 2},-12)rotate(-90)`)
+      .attr('text-anchor', 'start')
+      .attr('font-size', txtSize + 'em')
+      .style('font-family', theme.typography.fontFamily)
+      .attr('fill', theme.colors.text.primary)
+      .text(cp.name);
+    label.call(truncateLabel, txtLength);
+    addLabelTooltip(label, cp.name);
+  }
+
+  // Y axis labels (rows, left side)
+  const yAxisGroup = svg.append('g').attr('class', 'y-axis');
+  for (const rp of rowPositions) {
+    const label = yAxisGroup.append('text')
+      .attr('x', -10)
+      .attr('y', rp.pos + cellSize / 2)
+      .attr('text-anchor', 'end')
+      .attr('dominant-baseline', 'middle')
+      .attr('font-size', txtSize + 'em')
+      .style('font-family', theme.typography.fontFamily)
+      .attr('fill', theme.colors.text.primary)
+      .text(rp.name);
+    label.call(truncateLabel, txtLength);
+    addLabelTooltip(label, rp.name);
+  }
+
+  // Column category headers
+  if (hasColGrouping) {
+    const headerGroup = svg.append('g')
+      .attr('class', `category-headers-${id}`)
+      .attr('transform', `translate(0, ${-colTxtOffset - colCategoryHeaderHeight})`);
+
+    for (const category of colCategories) {
+      const startPos = colPosMap.get(category.columns[0]);
+      if (startPos === undefined) {
+        continue;
+      }
+      const catLabel = headerGroup.append('text')
+        .attr('transform', `translate(${startPos + cellSize / 2}, ${colCategoryHeaderHeight - 12})rotate(-90)`)
+        .attr('text-anchor', 'start')
+        .attr('font-size', (txtSize * 1.2) + 'em')
+        .attr('font-weight', 'bold')
+        .attr('fill', theme.colors.text.primary)
+        .style('font-family', theme.typography.fontFamily)
+        .text(category.name);
+      addLabelTooltip(catLabel, category.name);
+    }
+  }
+
+  // Row category headers
+  if (hasRowGrouping) {
+    const headerGroup = svg.append('g')
+      .attr('class', `row-category-headers-${id}`)
+      .attr('transform', `translate(${-rowTxtOffset - rowCategoryHeaderWidth}, 0)`);
+
+    for (const category of rowCategories) {
+      const startPos = rowPosMap.get(category.rows[0]);
+      if (startPos === undefined) {
+        continue;
+      }
+      const catLabel = headerGroup.append('text')
+        .attr('x', rowCategoryHeaderWidth / 2)
+        .attr('y', startPos + cellSize / 2)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('font-size', (txtSize * 1.2) + 'em')
+        .attr('font-weight', 'bold')
+        .attr('fill', theme.colors.text.primary)
+        .style('font-family', theme.typography.fontFamily)
+        .text(category.name);
+      addLabelTooltip(catLabel, category.name);
+    }
+  }
 
   // Matrix cells
   const outer = local<number>();
@@ -135,14 +283,14 @@ export function createViz(
     .append('rect')
     .attr('id', `rect-${id}`)
     .attr('x', function (_d, i) {
-      return x(colNames[i]) ?? 0;
+      return xPos(colNames[i]);
     })
     .attr('y', function (this: SVGRectElement) {
       const outerIdx = outer.get(this)!;
-      return y(rowNames[outerIdx]) ?? 0;
+      return yPos(rowNames[outerIdx]);
     })
-    .attr('width', x.bandwidth())
-    .attr('height', y.bandwidth())
+    .attr('width', bandwidth)
+    .attr('height', bandwidth)
     .attr('data', function (this: SVGRectElement, d, i) {
       const outerIdx = outer.get(this)!;
       return `${outerIdx}:${i} ${rowNames[outerIdx]}:${colNames[i]} ${d}`;
@@ -157,8 +305,8 @@ export function createViz(
     .on('mouseover', function (_event: MouseEvent, d: CellData | number) {
       if (typeof d === 'number') return;
       select(this)
-        .attr('width', x.bandwidth() + 5)
-        .attr('height', y.bandwidth() + 5)
+        .attr('width', bandwidth + 5)
+        .attr('height', bandwidth + 5)
         .attr('transform', 'translate(-1, -1)');
 
       let extrasHtml = '';
@@ -204,8 +352,8 @@ ${extrasHtml}</div>`)
     .on('mouseout', function () {
       select(this)
         .attr('transform', 'translate(0, 0)')
-        .attr('width', x.bandwidth())
-        .attr('height', y.bandwidth());
+        .attr('width', bandwidth)
+        .attr('height', bandwidth);
       tooltip.transition().delay(100).duration(150).style('opacity', 0);
     })
     .on('click', function () {

@@ -1,7 +1,7 @@
 import { DataFrameView, Field, FieldType, GrafanaTheme2, PanelData, getFieldDisplayName } from '@grafana/data';
-import { CellData, ExtraTooltipField, LegendItem, MatrixOptions, ParsedData } from './types';
+import { CategoryGroup, CellData, ColumnInfo, ExtraTooltipField, LegendItem, MatrixOptions, ParsedData, RowCategoryGroup, RowInfo } from './types';
 
-const EMPTY: ParsedData = { rows: null, columns: null, data: null, legend: null };
+const EMPTY: ParsedData = { rows: null, columns: null, colMetadata: [], colCategories: [], rowMetadata: [], rowCategories: [], data: null, legend: null };
 const MAX_CELLS = 50000;
 
 /**
@@ -37,6 +37,14 @@ export function parseData(data: PanelData, options: MatrixOptions, theme: Grafan
   if (!valueField || valKey === undefined) {
     return EMPTY;
   }
+
+  // Resolve optional category fields
+  const colCategoryField = options.colCategoryField
+    ? findField(series.fields, options.colCategoryField) : undefined;
+  const colCategoryKey = colCategoryField?.name;
+  const rowCategoryField = options.rowCategoryField
+    ? findField(series.fields, options.rowCategoryField) : undefined;
+  const rowCategoryKey = rowCategoryField?.name;
 
   // Color mapping: value → threshold color, null → nullColor, -1 sentinel → defaultColor
   const nullColor = theme.visualization.getColorByName(options.nullColor);
@@ -81,8 +89,126 @@ export function parseData(data: PanelData, options: MatrixOptions, theme: Grafan
     columns.sort(sort);
   }
 
+  // Build column category groupings
+  let colMetadata: ColumnInfo[] = [];
+  let colCategories: CategoryGroup[] = [];
+
+  if (colCategoryKey && options.enableColGrouping) {
+    const colToCategoryMap = new Map<string, string>();
+    frame.forEach((row: Record<string, unknown>) => {
+      const col = String(row[targetKey]);
+      const cat = row[colCategoryKey] != null ? String(row[colCategoryKey]) : 'Uncategorized';
+      if (!colToCategoryMap.has(col)) {
+        colToCategoryMap.set(col, cat);
+      }
+    });
+
+    const categoryToColumns = new Map<string, string[]>();
+    for (const col of columns) {
+      const cat = colToCategoryMap.get(col) ?? 'Uncategorized';
+      if (!categoryToColumns.has(cat)) {
+        categoryToColumns.set(cat, []);
+      }
+      categoryToColumns.get(cat)!.push(col);
+    }
+
+    const sortedCategories = Array.from(categoryToColumns.keys()).sort();
+    let globalIndex = 0;
+    for (const catName of sortedCategories) {
+      const columnsInCat = categoryToColumns.get(catName)!;
+      colCategories.push({
+        name: catName,
+        columns: columnsInCat,
+        startIndex: globalIndex,
+        endIndex: globalIndex + columnsInCat.length - 1,
+      });
+      globalIndex += columnsInCat.length;
+    }
+
+    for (let catIndex = 0; catIndex < colCategories.length; catIndex++) {
+      const cat = colCategories[catIndex];
+      for (let indexInCat = 0; indexInCat < cat.columns.length; indexInCat++) {
+        colMetadata.push({
+          name: cat.columns[indexInCat],
+          category: cat.name,
+          categoryIndex: catIndex,
+          indexInCategory: indexInCat,
+        });
+      }
+    }
+
+    // Re-order columns to match grouped order
+    columns = colMetadata.map((cm) => cm.name);
+  } else {
+    colMetadata = columns.map((name, idx) => ({
+      name,
+      category: '',
+      categoryIndex: 0,
+      indexInCategory: idx,
+    }));
+  }
+
+  // Build row category groupings
+  let rowMetadata: RowInfo[] = [];
+  let rowCategories: RowCategoryGroup[] = [];
+
+  if (rowCategoryKey && options.enableRowGrouping) {
+    const rowToCategoryMap = new Map<string, string>();
+    frame.forEach((row: Record<string, unknown>) => {
+      const rowName = String(row[sourceKey]);
+      const cat = row[rowCategoryKey] != null ? String(row[rowCategoryKey]) : 'Uncategorized';
+      if (!rowToCategoryMap.has(rowName)) {
+        rowToCategoryMap.set(rowName, cat);
+      }
+    });
+
+    const categoryToRows = new Map<string, string[]>();
+    for (const rowName of rows) {
+      const cat = rowToCategoryMap.get(rowName) ?? 'Uncategorized';
+      if (!categoryToRows.has(cat)) {
+        categoryToRows.set(cat, []);
+      }
+      categoryToRows.get(cat)!.push(rowName);
+    }
+
+    const sortedRowCategories = Array.from(categoryToRows.keys()).sort();
+    let globalRowIndex = 0;
+    for (const catName of sortedRowCategories) {
+      const rowsInCat = categoryToRows.get(catName)!;
+      rowCategories.push({
+        name: catName,
+        rows: rowsInCat,
+        startIndex: globalRowIndex,
+        endIndex: globalRowIndex + rowsInCat.length - 1,
+      });
+      globalRowIndex += rowsInCat.length;
+    }
+
+    for (let catIndex = 0; catIndex < rowCategories.length; catIndex++) {
+      const cat = rowCategories[catIndex];
+      for (let indexInCat = 0; indexInCat < cat.rows.length; indexInCat++) {
+        rowMetadata.push({
+          name: cat.rows[indexInCat],
+          category: cat.name,
+          categoryIndex: catIndex,
+          indexInCategory: indexInCat,
+        });
+      }
+    }
+
+    // Re-order rows to match grouped order
+    rows = rowMetadata.map((rm) => rm.name);
+  } else {
+    rowMetadata = rows.map((name, idx) => ({
+      name,
+      category: '',
+      categoryIndex: 0,
+      indexInCategory: idx,
+    }));
+  }
+
   if (rows.length * columns.length > MAX_CELLS) {
-    return { rows: null, columns: null, data: 'too many inputs', legend: null };
+    return { rows: null, columns: null, colMetadata: [], colCategories: [], rowMetadata: [], rowCategories: [], data: 'too many inputs', legend: null };
   }
 
   // Extra tooltip fields: resolve from additional series or merged number columns
@@ -130,7 +256,7 @@ export function parseData(data: PanelData, options: MatrixOptions, theme: Grafan
     const r = rows.indexOf(String(row[sourceKey]));
     const c = columns.indexOf(String(row[targetKey]));
     const v = row[valKey] as number;
-    if (r > -1 && c > -1) {
+    if (r > -1 && c > -1 && dataMatrix[r][c] === -1) {
       const key = `${row[sourceKey]}|${row[targetKey]}`;
       const extras: ExtraTooltipField[] = extraLookups.map(({ label, lookup }) => ({
         label,
@@ -173,7 +299,7 @@ export function parseData(data: PanelData, options: MatrixOptions, theme: Grafan
     }
   }
 
-  return { rows, columns, data: dataMatrix as CellData[][], legend };
+  return { rows, columns, colMetadata, colCategories, rowMetadata, rowCategories, data: dataMatrix as CellData[][], legend };
 }
 
 /** Find a field by name, displayNameFromDS, or getFieldDisplayName. */

@@ -25,6 +25,14 @@ export interface MatrixOptions {
   legendType: string;
   extraTooltipFields: string;
   fitToPanel: boolean;
+  colCategoryField: string;
+  enableColGrouping: boolean;
+  colCategoryHeaderHeight: number;
+  colCategoryGap: number;
+  rowCategoryField: string;
+  enableRowGrouping: boolean;
+  rowCategoryHeaderWidth: number;
+  rowCategoryGap: number;
 }
 
 export interface ExtraTooltipField {
@@ -46,9 +54,41 @@ export interface LegendItem {
   color: string;
 }
 
+export interface ColumnInfo {
+  name: string;
+  category: string;
+  categoryIndex: number;
+  indexInCategory: number;
+}
+
+export interface CategoryGroup {
+  name: string;
+  columns: string[];
+  startIndex: number;
+  endIndex: number;
+}
+
+export interface RowInfo {
+  name: string;
+  category: string;
+  categoryIndex: number;
+  indexInCategory: number;
+}
+
+export interface RowCategoryGroup {
+  name: string;
+  rows: string[];
+  startIndex: number;
+  endIndex: number;
+}
+
 export interface ParsedData {
   rows: string[] | null;
   columns: string[] | null;
+  colMetadata: ColumnInfo[];
+  colCategories: CategoryGroup[];
+  rowMetadata: RowInfo[];
+  rowCategories: RowCategoryGroup[];
   data: CellData[][] | string | null;
   legend: LegendItem[] | null;
 }

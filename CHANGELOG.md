@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-### New features (from upstream PR #26 `categorize` branch)
+### New Categorize Features (from upstream PR #26 `categorize` branch)
 - **Column grouping**: group columns by a category field with visual gaps and
   rotated category headers (options: `enableColGrouping`, `colCategoryField`,
   `colCategoryHeaderHeight`, `colCategoryGap`)
@@ -15,11 +15,6 @@
 ### Test dashboard
 - Added Panel 9 (column grouping by region), Panel 10 (row grouping by tier),
   Panel 11 (both axes grouped simultaneously)
-
-## 3.0.0 - PR Merge, Improvements, Rewrite
-
-Addressing the backlog on merging PRs in upstream, this fork attempts to catch
-up with contributions and address some more pain points:
 
 ### Modernized Build system
 - Replaced webpack + 1.7 GB `node_modules` with **bun** (`build.mjs`, ~200 lines)
