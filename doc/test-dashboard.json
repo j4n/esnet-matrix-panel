@@ -510,7 +510,7 @@
         "type": "grafana-testdata-datasource",
         "uid": "bfg9ri27zj20wb"
       },
-      "description": "Test #11: Null values → red (#FF4444), missing pairs → gray (#AAAAAA). 10 of 16 cells filled, 2 nulls.",
+      "description": "Test #11: Null values -> red (#FF4444), missing pairs -> gray (#AAAAAA). 10 of 16 cells filled, 2 nulls.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -818,7 +818,273 @@
           "scenarioId": "csv_content"
         }
       ],
-      "title": "Panel 8: Empty Query → No Data",
+      "title": "Panel 8: Empty Query -> No Data",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #15: enableColGrouping=true with colCategoryField='region'. Columns grouped by region with category headers and gaps between groups.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 33
+      },
+      "id": 11,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "colCategoryField": "region",
+        "colCategoryGap": 4,
+        "colCategoryHeaderHeight": 100,
+        "defaultColor": "#E6E6E6",
+        "enableColGrouping": true,
+        "enableRowGrouping": false,
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "categorical",
+        "nullColor": "#E6E6E6",
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "Host",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "Service",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Latency"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value,region\nhost1,svcA,10,US-East\nhost1,svcB,45,US-East\nhost1,svcC,80,US-West\nhost1,svcD,22,US-West\nhost1,svcE,67,EU\nhost2,svcA,33,US-East\nhost2,svcB,58,US-East\nhost2,svcC,91,US-West\nhost2,svcD,14,US-West\nhost2,svcE,72,EU\nhost3,svcA,27,US-East\nhost3,svcB,63,US-East\nhost3,svcC,49,US-West\nhost3,svcD,85,US-West\nhost3,svcE,38,EU",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 9: Column Grouping by Region",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #16: enableRowGrouping=true with rowCategoryField='tier'. Rows grouped by tier with category headers and gaps between groups.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "orange",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "id": 12,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "defaultColor": "#E6E6E6",
+        "enableColGrouping": false,
+        "enableRowGrouping": true,
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "categorical",
+        "nullColor": "#E6E6E6",
+        "rowCategoryField": "tier",
+        "rowCategoryGap": 4,
+        "rowCategoryHeaderWidth": 100,
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "Server",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "Metric",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Score"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value,tier\nweb1,cpu,55,Frontend\nweb1,mem,72,Frontend\nweb1,disk,30,Frontend\nweb2,cpu,48,Frontend\nweb2,mem,65,Frontend\nweb2,disk,25,Frontend\napi1,cpu,82,Backend\napi1,mem,91,Backend\napi1,disk,44,Backend\napi2,cpu,77,Backend\napi2,mem,88,Backend\napi2,disk,39,Backend\ndb1,cpu,95,Database\ndb1,mem,98,Database\ndb1,disk,87,Database",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 10: Row Grouping by Tier",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #17: Both enableColGrouping and enableRowGrouping active simultaneously. Columns grouped by 'zone', rows grouped by 'dept'.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 25
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 75
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 14,
+        "x": 0,
+        "y": 43
+      },
+      "id": 13,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "colCategoryField": "zone",
+        "colCategoryGap": 6,
+        "colCategoryHeaderHeight": 100,
+        "defaultColor": "#E6E6E6",
+        "enableColGrouping": true,
+        "enableRowGrouping": true,
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "rowCategoryField": "dept",
+        "rowCategoryGap": 6,
+        "rowCategoryHeaderWidth": 100,
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "Team",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "Resource",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Usage %"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value,dept,zone\ndev1,res1,20,Engineering,Zone-A\ndev1,res2,55,Engineering,Zone-A\ndev1,res3,80,Engineering,Zone-B\ndev1,res4,35,Engineering,Zone-B\ndev2,res1,45,Engineering,Zone-A\ndev2,res2,70,Engineering,Zone-A\ndev2,res3,15,Engineering,Zone-B\ndev2,res4,90,Engineering,Zone-B\nmkt1,res1,60,Marketing,Zone-A\nmkt1,res2,30,Marketing,Zone-A\nmkt1,res3,85,Marketing,Zone-B\nmkt1,res4,42,Marketing,Zone-B\nops1,res1,75,Operations,Zone-A\nops1,res2,50,Operations,Zone-A\nops1,res3,28,Operations,Zone-B\nops1,res4,65,Operations,Zone-B",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 11: Both Row + Column Grouping",
       "type": "esnet-matrix-panel"
     }
   ],

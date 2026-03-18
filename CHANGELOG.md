@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### New features (from upstream PR #26 `categorize` branch)
+- **Column grouping**: group columns by a category field with visual gaps and
+  rotated category headers (options: `enableColGrouping`, `colCategoryField`,
+  `colCategoryHeaderHeight`, `colCategoryGap`)
+- **Row grouping**: group rows by a category field with visual gaps and
+  horizontal category headers (options: `enableRowGrouping`, `rowCategoryField`,
+  `rowCategoryHeaderWidth`, `rowCategoryGap`)
+- Both grouping axes can be used simultaneously
+- Duplicate-cell guard: skip overwrite when `dataMatrix[r][c]` is already populated
+
+### Test dashboard
+- Added Panel 9 (column grouping by region), Panel 10 (row grouping by tier),
+  Panel 11 (both axes grouped simultaneously)
+
 ## 3.0.0 - PR Merge, Improvements, Rewrite
 
 Addressing the backlog on merging PRs in upstream, this fork attempts to catch
