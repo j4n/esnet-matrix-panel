@@ -20,8 +20,7 @@
     "d3-selection": "^3.0.0",
     "d3-transition": "^3.0.0",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "tslib": "^2.5.0"
+    "react-dom": "^18.0.0"
   },
   "devDependencies": {
     "@types/d3-axis": "^3.0.0",
