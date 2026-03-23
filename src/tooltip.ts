@@ -16,6 +16,7 @@ export const getStyles = (theme: GrafanaTheme2) => ({
     z-index: 500;
     position: absolute;
     width: fit-content;
+    pointer-events: none;
   `,
   tooltipTable: css`
     display: grid;
@@ -47,25 +48,30 @@ export function moveTooltip(
   elem: HTMLElement,
   tooltip: ReturnType<typeof select<HTMLDivElement, unknown>>
 ): void {
+  const elemRect = elem.getBoundingClientRect();
   const scrollRect = elem.parentElement!.getBoundingClientRect();
   const tooltipRect = tooltip.node()!.getBoundingClientRect();
+
+  // Position relative to elem, not the event target
+  const mouseX = event.clientX - elemRect.left + elem.scrollLeft;
+  const mouseY = event.clientY - elemRect.top + elem.scrollTop;
 
   const mouseDistance = 10;
   const xMax = scrollRect.width + elem.parentElement!.scrollLeft - tooltipRect.width;
   const yMax = scrollRect.height + elem.parentElement!.scrollTop - tooltipRect.height;
 
   let xPos: number;
-  if (event.offsetX - mouseDistance >= 0 && event.offsetX + mouseDistance >= xMax) {
-    xPos = Math.max(event.offsetX - tooltipRect.width - mouseDistance, 0);
+  if (mouseX - mouseDistance >= 0 && mouseX + mouseDistance >= xMax) {
+    xPos = Math.max(mouseX - tooltipRect.width - mouseDistance, 0);
   } else {
-    xPos = Math.min(event.offsetX + mouseDistance, xMax);
+    xPos = Math.min(mouseX + mouseDistance, xMax);
   }
 
   let yPos: number;
-  if (event.offsetY - mouseDistance >= 0 && event.offsetY + mouseDistance >= yMax) {
-    yPos = Math.max(event.offsetY - tooltipRect.height - mouseDistance, 0);
+  if (mouseY - mouseDistance >= 0 && mouseY + mouseDistance >= yMax) {
+    yPos = Math.max(mouseY - tooltipRect.height - mouseDistance, 0);
   } else {
-    yPos = Math.min(event.offsetY + mouseDistance, yMax);
+    yPos = Math.min(mouseY + mouseDistance, yMax);
   }
 
   tooltip.style('left', `${xPos}px`).style('top', `${yPos}px`);

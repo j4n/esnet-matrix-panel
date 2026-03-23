@@ -278,16 +278,37 @@ export function parseData(data: PanelData, options: MatrixOptions, theme: Grafan
   if (options.showLegend) {
     let tempValues: (number | string)[] = [];
     if (options.legendType === 'range') {
+      const thresholds = valueField!.config.thresholds;
       const allValues: number[] = Object.values(frame.fields[valKey].values)
         .filter((v): v is number => typeof v === 'number' && !isNaN(v));
       const min = Math.min(...allValues);
       const max = Math.max(...allValues);
-      const step = (max - min) / 10;
-      for (let i = 0; i <= 10; i++) {
-        tempValues.push(min + i * step);
+      if (thresholds && thresholds.steps.length > 1) {
+        // Use actual threshold boundaries
+        tempValues.push(min);
+        for (const step of thresholds.steps) {
+          if (step.value != null && step.value > min && step.value < max) {
+            tempValues.push(step.value);
+          }
+        }
+        tempValues.push(max);
+      } else {
+        // Fallback: evenly sample
+        const steps = 100;
+        const step = (max - min) / steps;
+        for (let i = 0; i <= steps; i++) {
+          tempValues.push(min + i * step);
+        }
       }
     } else {
       tempValues = [...new Set<string>(Object.values(frame.fields[valKey].values))];
+      if (options.sortType === 'natural-asc' || options.sortType === 'natural-desc') {
+        const naturalSort = (a: string, b: string) =>
+          a.toString().localeCompare(b.toString(), undefined, { numeric: true });
+        tempValues.sort(options.sortType === 'natural-desc'
+          ? (a, b) => naturalSort(String(b), String(a))
+          : (a, b) => naturalSort(String(a), String(b)));
+      }
     }
     for (const val of tempValues) {
       const d = valueField!.display!(val);

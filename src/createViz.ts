@@ -367,37 +367,53 @@ ${extrasHtml}</div>`)
     const legendClass = `legend-${id}`;
 
     if (options.legendType === 'range') {
-      // Range legend: SVG color bar with min/max labels
-      select(elem)
+      // Range legend: HTML color bar with min/max labels and hover values
+      const legendDiv = select(elem)
         .append('div')
         .attr('class', `matrix-legend-${id}`)
-        .append('svg')
-        .attr('id', legendClass);
+        .style('padding', '8px 0');
 
-      const legendSvg = select(`#${legendClass}`);
-      legendSvg
-        .attr('width', 25 + (legend.length - 1) * 10 + legend[legend.length - 1].label.length * 9)
-        .attr('height', 50 + 16)
-        .append('g')
-        .selectAll('rect')
-        .data(legend)
-        .enter()
-        .append('rect')
-        .attr('class', `legend-bar-${id}`)
-        .attr('width', 10)
-        .attr('height', 10)
-        .attr('fill', (d) => d.color)
-        .attr('x', (_d, i) => 25 + i * 10)
-        .attr('y', 20);
-      legendSvg.append('g')
-        .selectAll('text')
-        .data(legend)
-        .enter()
-        .append('text')
-        .attr('x', (_d, i) => 20 + i * 10)
-        .attr('y', 50)
-        .text((d, i) => (i === 0 || i === legend.length - 1) ? d.label : '')
-        .attr('fill', theme.colors.text.primary);
+      const barRow = legendDiv.append('div')
+        .style('display', 'flex')
+        .style('align-items', 'center');
+
+      barRow.append('span')
+        .style('font-family', theme.typography.fontFamily)
+        .style('font-size', theme.typography.size.sm)
+        .style('color', theme.colors.text.primary)
+        .style('margin-right', '6px')
+        .text(legend[0].label);
+
+      // Group consecutive segments by color to show full range per color
+      const colorGroups: { color: string; startLabel: string; endLabel: string; count: number }[] = [];
+      for (let i = 0; i < legend.length; i++) {
+        const last = colorGroups[colorGroups.length - 1];
+        if (last && last.color === legend[i].color) {
+          last.endLabel = legend[i].label;
+          last.count++;
+        } else {
+          colorGroups.push({ color: legend[i].color, startLabel: legend[i].label, endLabel: legend[i].label, count: 1 });
+        }
+      }
+      for (const group of colorGroups) {
+        const rangeText = group.startLabel === group.endLabel
+          ? group.startLabel
+          : `${group.startLabel} - ${group.endLabel}`;
+        barRow.append('div')
+          .attr('class', `legend-bar-${id}`)
+          .attr('title', rangeText)
+          .style('width', `${group.count * 15}px`)
+          .style('height', '14px')
+          .style('background-color', group.color)
+          .style('flex-shrink', '0');
+      }
+
+      barRow.append('span')
+        .style('font-family', theme.typography.fontFamily)
+        .style('font-size', theme.typography.size.sm)
+        .style('color', theme.colors.text.primary)
+        .style('margin-left', '6px')
+        .text(legend[legend.length - 1].label);
     } else {
       // Categorical legend: HTML flexbox (wraps naturally within panel width)
       const legendDiv = select(elem)
