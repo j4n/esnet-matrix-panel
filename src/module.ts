@@ -41,9 +41,6 @@ plugin.setMigrationHandler((panel: { options: MatrixOptions; fieldConfig: FieldC
   if (panel.options.stepInterval === undefined) {
     panel.options.stepInterval = '60m';
   }
-  if ((panel.options as any).showPlaybackBar === undefined) {
-    (panel.options as any).showPlaybackBar = true;
-  }
   if ((panel.options as any).animationRange === undefined) {
     (panel.options as any).animationRange = '3h';
   }
@@ -350,8 +347,8 @@ plugin.setPanelOptions((builder) => {
   // Time Series Options
   builder.addSelect({
     path: 'timeMode',
-    name: 'Default Time Mode',
-    description: 'Initial mode when the panel loads. Users can switch interactively via the playback bar.',
+    name: 'Time Mode',
+    description: 'How to handle time series data. "Last" shows the most recent value (default). "Aggregate" collapses the time range with a function.',
     category: TimeSeriesCategory,
     defaultValue: 'last',
     settings: {
@@ -415,13 +412,6 @@ plugin.setPanelOptions((builder) => {
     showIf: (config) => config.timeMode === 'animate',
     defaultValue: 1000,
     settings: { integer: true, min: 50, max: 5000 },
-  });
-  builder.addBooleanSwitch({
-    path: 'showPlaybackBar',
-    name: 'Show Playback Bar',
-    description: 'Show the mode selector and playback controls at the bottom of the panel',
-    category: TimeSeriesCategory,
-    defaultValue: true,
   });
   builder.addSelect({
     path: 'animationRange',

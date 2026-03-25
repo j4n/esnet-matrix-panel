@@ -82,6 +82,22 @@ Cell color is determined by the numeric value field and the **Thresholds** confi
 | **Variable 1** | Name of a Grafana template variable that receives the row (source) label. Appended as `&var-<name>=<row>`. |
 | **Variable 2** | Name of a Grafana template variable that receives the column (target) label. Appended as `&var-<name>=<col>`. |
 
+### Time Series
+
+| Option | Description |
+|--------|-------------|
+| **Time Mode** | How to handle time series data. *Last* (default) uses the most recent value. *Aggregate* collapses the range with a function. *Stepping* shifts the dashboard time window. *Animate* plays back frames client-side. |
+| **Aggregation Function** | Function for Aggregate mode: mean, min, max, sum, count, range (max-min), delta (last-first). |
+| **Step Interval** | How far to shift the dashboard time window per step in Stepping mode (15m to 30d). |
+| **Animation Speed (ms)** | Milliseconds between frames during Animate playback (50-5000, default 1000). |
+| **Animation Fetch Range** | Time range to fetch when switching to Animate mode interactively via the playback bar (1h-24h, default 3h). |
+
+When Time Mode is set to Stepping or Animate, a playback bar appears at the bottom of the panel with transport controls and an interactive mode switcher. From the bar you can switch between Last, Step, and Animate modes without opening panel edit.
+
+**Performance tips for time series queries:**
+- For fast dashboard load, use Time Mode *Last* with an instant query or a short time range.
+- Animate mode uses lazy fetching: it only requests range data when you click "Anim", so the initial panel load stays fast regardless of the configured animation range.
+
 ## Test Dashboard
 
 A comprehensive test dashboard is included at [`doc/test-dashboard.json`](doc/test-dashboard.json). It uses the built-in **TestData** datasource to exercise every panel option without needing a real data source.

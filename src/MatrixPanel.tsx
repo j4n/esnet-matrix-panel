@@ -52,12 +52,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
   // Cache key: tracks what data request + range was used for the cached frames
   const lazyCacheKeyRef = useRef<string>('');
 
-  const showBar = options.showPlaybackBar !== false;
-
-  // Reset activeMode when the panel option changes
-  useEffect(() => {
-    setActiveMode(options.timeMode);
-  }, [options.timeMode]);
+  const showBar = activeMode !== 'last' && activeMode !== 'aggregate';
 
   // Build animation frames from DataFrame[] (used by both inline and lazy-fetched data)
   const buildAnimFrames = useCallback((series: any): AnimationFrames | null => {

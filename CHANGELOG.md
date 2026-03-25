@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Time Series Support
+- **Time modes**: last (default), aggregate, stepping, animate
+- **Playback bar**: appears automatically for stepping/animate modes with
+  interactive mode switcher and unicode transport controls
+- **Lazy fetch**: animate mode fetches range data on demand via datasource API,
+  so dashboards load fast even with large time ranges
+- **Stepping**: shifts dashboard time window forward/backward by configurable
+  interval
+- **Aggregation**: collapse time range with mean/min/max/sum/count/range/delta
+
 ### New Categorize Features (from upstream PR #26 `categorize` branch)
 - **Column grouping**: group columns by a category field with visual gaps and
   rotated category headers (options: `enableColGrouping`, `colCategoryField`,
