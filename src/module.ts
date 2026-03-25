@@ -5,6 +5,7 @@ import { MatrixPanel } from './MatrixPanel';
 const OptionsCategory = ['Display'];
 const URLCategory = ['Link Options'];
 const RowOptions = ['Row/Column Options'];
+const TimeSeriesCategory = ['Time Series'];
 
 const urlBool = (v: boolean) => (config: MatrixOptions) => config.addUrl === v;
 const staticBool = (v: boolean) => (config: MatrixOptions) => config.inputList === v;
@@ -30,6 +31,15 @@ plugin.useFieldConfig({
 plugin.setMigrationHandler((panel: { options: MatrixOptions; fieldConfig: FieldConfigSource }) => {
   if (panel.options.sortType === undefined) {
     panel.options.sortType = 'natural-asc';
+  }
+  if (panel.options.timeMode === undefined) {
+    panel.options.timeMode = 'last';
+  }
+  if (panel.options.aggregation === undefined) {
+    panel.options.aggregation = 'mean';
+  }
+  if (panel.options.stepInterval === undefined) {
+    panel.options.stepInterval = '60m';
   }
   return panel.options;
 });
@@ -329,5 +339,75 @@ plugin.setPanelOptions((builder) => {
     description: 'The name of the template variable to pass the target label to',
     category: URLCategory,
     showIf: urlBool(true),
+  });
+
+  // Time Series Options
+  builder.addSelect({
+    path: 'timeMode',
+    name: 'Time Mode',
+    description: 'How to handle time series data. "Last" shows the most recent value (default). "Aggregate" collapses the time range with a function.',
+    category: TimeSeriesCategory,
+    defaultValue: 'last',
+    settings: {
+      allowCustomValue: false,
+      options: [
+        { value: 'last', label: 'Last value (default)' },
+        { value: 'aggregate', label: 'Aggregate over time range' },
+        { value: 'stepping', label: 'Step through time (server-side)' },
+        { value: 'animate', label: 'Animate over time (client-side)' },
+      ],
+    },
+  });
+  builder.addSelect({
+    path: 'aggregation',
+    name: 'Aggregation Function',
+    description: 'How to combine multiple time points per source/target pair',
+    category: TimeSeriesCategory,
+    defaultValue: 'mean',
+    showIf: (config) => config.timeMode === 'aggregate',
+    settings: {
+      allowCustomValue: false,
+      options: [
+        { value: 'last', label: 'Last' },
+        { value: 'mean', label: 'Mean' },
+        { value: 'min', label: 'Min' },
+        { value: 'max', label: 'Max' },
+        { value: 'sum', label: 'Sum' },
+        { value: 'count', label: 'Count' },
+        { value: 'range', label: 'Range (max - min)' },
+        { value: 'delta', label: 'Delta (last - first)' },
+      ],
+    },
+  });
+  builder.addSelect({
+    path: 'stepInterval',
+    name: 'Step Interval',
+    description: 'How far to shift the dashboard time window per step',
+    category: TimeSeriesCategory,
+    defaultValue: '60m',
+    showIf: (config) => config.timeMode === 'stepping',
+    settings: {
+      allowCustomValue: false,
+      options: [
+        { value: '15m', label: '15 minutes' },
+        { value: '60m', label: '1 hour' },
+        { value: '3h', label: '3 hours' },
+        { value: '12h', label: '12 hours' },
+        { value: '24h', label: '1 day' },
+        { value: '3d', label: '3 days' },
+        { value: '7d', label: '1 week' },
+        { value: '14d', label: '2 weeks' },
+        { value: '30d', label: '30 days' },
+      ],
+    },
+  });
+  builder.addNumberInput({
+    path: 'animationSpeedMs',
+    name: 'Animation Speed (ms)',
+    description: 'Milliseconds between frames during playback',
+    category: TimeSeriesCategory,
+    showIf: (config) => config.timeMode === 'animate',
+    defaultValue: 1000,
+    settings: { integer: true, min: 50, max: 5000 },
   });
 });

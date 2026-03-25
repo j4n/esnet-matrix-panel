@@ -1086,6 +1086,207 @@
       ],
       "title": "Panel 11: Both Row + Column Grouping",
       "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #12: timeMode=aggregate with mean. The 4 timestamps per pair have varying values, so mean should differ from last. Compare with Panel 1 (last-value default) to verify aggregation works.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 70 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 55 },
+      "id": 14,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Value",
+        "timeMode": "aggregate",
+        "aggregation": "mean",
+        "stepInterval": "60m"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "time,source,target,value\n2024-01-01T00:00:00Z,alpha,one,10\n2024-01-01T00:15:00Z,alpha,one,20\n2024-01-01T00:30:00Z,alpha,one,90\n2024-01-01T00:45:00Z,alpha,one,40\n2024-01-01T00:00:00Z,alpha,two,50\n2024-01-01T00:15:00Z,alpha,two,60\n2024-01-01T00:30:00Z,alpha,two,30\n2024-01-01T00:45:00Z,alpha,two,80\n2024-01-01T00:00:00Z,alpha,three,80\n2024-01-01T00:15:00Z,alpha,three,10\n2024-01-01T00:30:00Z,alpha,three,70\n2024-01-01T00:45:00Z,alpha,three,50\n2024-01-01T00:00:00Z,beta,one,25\n2024-01-01T00:15:00Z,beta,one,35\n2024-01-01T00:30:00Z,beta,one,45\n2024-01-01T00:45:00Z,beta,one,15\n2024-01-01T00:00:00Z,beta,two,60\n2024-01-01T00:15:00Z,beta,two,70\n2024-01-01T00:30:00Z,beta,two,80\n2024-01-01T00:45:00Z,beta,two,90\n2024-01-01T00:00:00Z,beta,three,90\n2024-01-01T00:15:00Z,beta,three,20\n2024-01-01T00:30:00Z,beta,three,60\n2024-01-01T00:45:00Z,beta,three,40\n2024-01-01T00:00:00Z,gamma,one,5\n2024-01-01T00:15:00Z,gamma,one,55\n2024-01-01T00:30:00Z,gamma,one,35\n2024-01-01T00:45:00Z,gamma,one,85\n2024-01-01T00:00:00Z,gamma,two,45\n2024-01-01T00:15:00Z,gamma,two,15\n2024-01-01T00:30:00Z,gamma,two,75\n2024-01-01T00:45:00Z,gamma,two,25\n2024-01-01T00:00:00Z,gamma,three,75\n2024-01-01T00:15:00Z,gamma,three,95\n2024-01-01T00:30:00Z,gamma,three,5\n2024-01-01T00:45:00Z,gamma,three,65",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 12: Aggregation (Mean)",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS}"
+      },
+      "description": "Test #13: timeMode=stepping with real Prometheus datasource. Edit the query to match your metric/labels. Set sourceField and targetField in panel options to match your label names. Use [<<] [>>] buttons to step through time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 70 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 64 },
+      "id": 15,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 15,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": true,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "",
+        "sourceText": "Source",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "",
+        "targetText": "Target",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "",
+        "valueText": "Value",
+        "timeMode": "stepping",
+        "aggregation": "mean",
+        "stepInterval": "60m"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS}"
+          },
+          "expr": "your_metric{source_label=~\".*\", target_label=~\".*\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Panel 13: Time Stepping (Prometheus)",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #14: timeMode=animate. Uses same time series CSV as Panel 12. Press play to watch the matrix animate through 4 time steps. Each step shows different values/colors.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 70 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 55 },
+      "id": 16,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Value",
+        "timeMode": "animate",
+        "aggregation": "mean",
+        "stepInterval": "60m",
+        "animationSpeedMs": 500
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "time,source,target,value\n2024-01-01T00:00:00Z,alpha,one,10\n2024-01-01T00:15:00Z,alpha,one,20\n2024-01-01T00:30:00Z,alpha,one,90\n2024-01-01T00:45:00Z,alpha,one,40\n2024-01-01T00:00:00Z,alpha,two,50\n2024-01-01T00:15:00Z,alpha,two,60\n2024-01-01T00:30:00Z,alpha,two,30\n2024-01-01T00:45:00Z,alpha,two,80\n2024-01-01T00:00:00Z,alpha,three,80\n2024-01-01T00:15:00Z,alpha,three,10\n2024-01-01T00:30:00Z,alpha,three,70\n2024-01-01T00:45:00Z,alpha,three,50\n2024-01-01T00:00:00Z,beta,one,25\n2024-01-01T00:15:00Z,beta,one,35\n2024-01-01T00:30:00Z,beta,one,45\n2024-01-01T00:45:00Z,beta,one,15\n2024-01-01T00:00:00Z,beta,two,60\n2024-01-01T00:15:00Z,beta,two,70\n2024-01-01T00:30:00Z,beta,two,80\n2024-01-01T00:45:00Z,beta,two,90\n2024-01-01T00:00:00Z,beta,three,90\n2024-01-01T00:15:00Z,beta,three,20\n2024-01-01T00:30:00Z,beta,three,60\n2024-01-01T00:45:00Z,beta,three,40\n2024-01-01T00:00:00Z,gamma,one,5\n2024-01-01T00:15:00Z,gamma,one,55\n2024-01-01T00:30:00Z,gamma,one,35\n2024-01-01T00:45:00Z,gamma,one,85\n2024-01-01T00:00:00Z,gamma,two,45\n2024-01-01T00:15:00Z,gamma,two,15\n2024-01-01T00:30:00Z,gamma,two,75\n2024-01-01T00:45:00Z,gamma,two,25\n2024-01-01T00:00:00Z,gamma,three,75\n2024-01-01T00:15:00Z,gamma,three,95\n2024-01-01T00:30:00Z,gamma,three,5\n2024-01-01T00:45:00Z,gamma,three,65",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 14: Animation Playback",
+      "type": "esnet-matrix-panel"
     }
   ],
   "refresh": false,
@@ -1095,7 +1296,22 @@
     "matrix"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "DS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
   },
   "time": {
     "from": "now-1h",

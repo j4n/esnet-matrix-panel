@@ -1,9 +1,29 @@
 import { GrafanaTheme2 } from '@grafana/data';
-import { select, local } from 'd3-selection';
+import { select, local, selectAll } from 'd3-selection';
 import 'd3-transition';
 import { escapeHtml } from './escapeHtml';
 import { CellData, MatrixOptions, ParsedData } from './types';
 import { TooltipStyles, moveTooltip, truncateLabel } from './tooltip';
+
+/**
+ * Fast update of cell colors only -- no DOM rebuild.
+ * colors is a flat array of [row0col0, row0col1, ..., row1col0, ...] color strings.
+ */
+export function updateViz(
+  elem: HTMLElement,
+  id: number,
+  colors: string[],
+): void {
+  let idx = 0;
+  select(elem).select(`.rectArea-${id}`).selectAll('.row').each(function () {
+    select(this).selectAll('rect').each(function () {
+      if (idx < colors.length) {
+        select(this).attr('fill', colors[idx]);
+        idx++;
+      }
+    });
+  });
+}
 
 interface PositionEntry {
   name: string;

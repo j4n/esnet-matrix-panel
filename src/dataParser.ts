@@ -324,7 +324,7 @@ export function parseData(data: PanelData, options: MatrixOptions, theme: Grafan
 }
 
 /** Find a field by name, displayNameFromDS, or getFieldDisplayName. */
-function findField(fields: Field[], name: string | undefined): Field | undefined {
+export function findField(fields: Field[], name: string | undefined): Field | undefined {
   if (name === undefined) {
     return undefined;
   }

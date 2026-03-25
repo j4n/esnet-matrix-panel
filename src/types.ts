@@ -33,6 +33,10 @@ export interface MatrixOptions {
   enableRowGrouping: boolean;
   rowCategoryHeaderWidth: number;
   rowCategoryGap: number;
+  timeMode: 'last' | 'aggregate' | 'stepping' | 'animate';
+  aggregation: 'last' | 'mean' | 'min' | 'max' | 'sum' | 'count' | 'range' | 'delta';
+  stepInterval: string;
+  animationSpeedMs: number;
 }
 
 export interface ExtraTooltipField {
@@ -80,6 +84,18 @@ export interface RowCategoryGroup {
   rows: string[];
   startIndex: number;
   endIndex: number;
+}
+
+export interface TimeSlice {
+  timestamp: number;
+  label: string;
+  values: Map<string, number>;
+}
+
+export interface AnimationFrames {
+  labels: string[];       // timestamp label per frame
+  colors: string[][];     // flat color array per frame [row0col0, row0col1, ...]
+  baseData: ParsedData;   // structure from first frame (for initial createViz)
 }
 
 export interface ParsedData {
