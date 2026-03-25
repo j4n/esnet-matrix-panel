@@ -115,8 +115,9 @@ async function build() {
     }
   );
 
-  // Replace: export { X } → (captured for later)
+  // Replace: export { X } -> (captured for later)
   // Collect named exports
+  // Note: \w does not match $ in JS regex, so use [\w$] for JS identifiers
   const exportedNames = [];
   amdBody = amdBody.replace(
     /export\s*\{\s*([^}]+)\s*\};?/g,
@@ -124,7 +125,7 @@ async function build() {
       names.split(',').forEach(n => {
         // Handle "localName as exportedName"
         const trimmed = n.trim();
-        const asMatch = trimmed.match(/^(\w+)\s+as\s+(\w+)$/);
+        const asMatch = trimmed.match(/^([\w$]+)\s+as\s+([\w$]+)$/);
         if (asMatch) {
           exportedNames.push({ local: asMatch[1], exported: asMatch[2] });
         } else if (trimmed) {
@@ -136,7 +137,7 @@ async function build() {
   );
   // Replace: export var/const/let/function/class X
   amdBody = amdBody.replace(
-    /export\s+(var|const|let|function|class)\s+(\w+)/g,
+    /export\s+(var|const|let|function|class)\s+([\w$]+)/g,
     (_, keyword, name) => {
       exportedNames.push({ local: name, exported: name });
       return `${keyword} ${name}`;

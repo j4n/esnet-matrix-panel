@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { dateTime, PanelProps } from '@grafana/data';
+import { dateTime, PanelProps, DataQueryRequest, DataQuery, DataSourceApi } from '@grafana/data';
+import { getDataSourceSrv } from '@grafana/runtime';
 import { useTheme2, useStyles2, CustomScrollbar } from '@grafana/ui';
 import { AnimationFrames, MatrixOptions } from './types';
 import { parseData } from './dataParser';
@@ -7,6 +8,8 @@ import { createViz, updateViz } from './createViz';
 import { getStyles } from './tooltip';
 import { findTimeField, groupBySourceTarget, aggregateTimeSeries, buildSyntheticPanelData, sliceTimeSeries } from './timeSeriesProcessor';
 import { PlaybackControls } from './PlaybackControls';
+
+type TimeMode = 'last' | 'aggregate' | 'stepping' | 'animate';
 
 /** Parse interval strings like '15m', '3h', '7d' into milliseconds. */
 function intervalToMs(interval: string): number {
@@ -24,6 +27,7 @@ function intervalToMs(interval: string): number {
 }
 
 const CONTROLS_HEIGHT = 40;
+const MAX_ANIMATION_FRAMES = 120;
 
 export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
   options, data, width, height, id, timeRange, onChangeTimeRange,
@@ -32,38 +36,49 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
   const styles = useStyles2(getStyles);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Interactive mode state -- initialized from panel option
+  const [activeMode, setActiveMode] = useState<TimeMode>(options.timeMode);
+
   // Animation state
   const [animPlaying, setAnimPlaying] = useState(false);
   const [animIndex, setAnimIndex] = useState(0);
   const [animSpeed, setAnimSpeed] = useState(options.animationSpeedMs || 1000);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Track whether initial createViz has been called for animation
   const animInitRef = useRef(false);
 
-  const showControls = options.timeMode === 'stepping' || options.timeMode === 'animate';
+  // Lazy fetch state for animate mode
+  const [lazyLoading, setLazyLoading] = useState(false);
+  const [lazyFrames, setLazyFrames] = useState<AnimationFrames | null>(null);
+  // Cache key: tracks what data request + range was used for the cached frames
+  const lazyCacheKeyRef = useRef<string>('');
 
-  // Pre-compute ALL animation frames at once: colors + labels
-  const animFrames: AnimationFrames | null = useMemo(() => {
-    if (options.timeMode !== 'animate' || !data.series[0]) {
+  const showBar = options.showPlaybackBar !== false;
+
+  // Reset activeMode when the panel option changes
+  useEffect(() => {
+    setActiveMode(options.timeMode);
+  }, [options.timeMode]);
+
+  // Build animation frames from DataFrame[] (used by both inline and lazy-fetched data)
+  const buildAnimFrames = useCallback((series: any): AnimationFrames | null => {
+    const frame = series[0];
+    if (!frame) {
       return null;
     }
-    const timeField = findTimeField(data.series[0]);
+    const timeField = findTimeField(frame);
     if (!timeField) {
-      console.log('[matrix-anim] no time field in series[0]');
       return null;
     }
     const groups = groupBySourceTarget(
-      data.series[0], options.sourceField, options.targetField, options.valueField,
+      frame, options.sourceField, options.targetField, options.valueField,
     );
     if (groups.size === 0) {
-      console.log('[matrix-anim] no groups found');
       return null;
     }
     const slices = sliceTimeSeries(groups);
     if (slices.length === 0) {
       return null;
     }
-    console.log('[matrix-anim] pre-computing', slices.length, 'frames for', groups.size, 'pairs');
 
     // Build the first frame's full ParsedData for initial createViz
     const firstSlice = slices[0];
@@ -82,7 +97,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     // Get the color mapping function from the original value field
     const nullColor = theme.visualization.getColorByName(options.nullColor);
     const defaultColor = theme.visualization.getColorByName(options.defaultColor);
-    const originalValueField = data.series[0].fields.find((f) => f.type === 'number');
+    const originalValueField = frame.fields.find((f: any) => f.type === 'number');
     const displayFn = originalValueField?.display;
 
     function colorFor(v: number | undefined): string {
@@ -95,8 +110,6 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
       return defaultColor;
     }
 
-    // Pre-compute flat color array for each frame
-    // Order must match createViz's rect layout: row by row, column by column
     const rowNames = baseData.rows;
     const colNames = baseData.columns;
     const labels: string[] = [];
@@ -115,9 +128,19 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
       colors.push(frameColors);
     }
 
-    console.log('[matrix-anim] pre-computed', colors.length, 'frames,', rowNames.length, 'x', colNames.length, 'cells');
     return { labels, colors, baseData };
   }, [data, options, theme]);
+
+  // Pre-compute animation frames from inline panel data (when timeMode is 'animate')
+  const inlineAnimFrames: AnimationFrames | null = useMemo(() => {
+    if (options.timeMode !== 'animate') {
+      return null;
+    }
+    return buildAnimFrames(data.series);
+  }, [data, options.timeMode, buildAnimFrames]);
+
+  // Determine which animation frames to use: lazy-fetched or inline
+  const animFrames = activeMode === 'animate' ? (lazyFrames ?? inlineAnimFrames) : null;
 
   // Reset animation when frames change
   useEffect(() => {
@@ -125,6 +148,102 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     setAnimPlaying(false);
     animInitRef.current = false;
   }, [animFrames]);
+
+  // Lazy fetch when switching to animate mode interactively
+  useEffect(() => {
+    if (activeMode !== 'animate') {
+      return;
+    }
+
+    // If we already have inline frames from panel data (timeMode was already 'animate'), use those
+    if (inlineAnimFrames) {
+      return;
+    }
+
+    // Build cache key from datasource uid + targets + animation range
+    const request = data.request;
+    const dsUid = request?.targets?.[0]?.datasource?.uid ?? '';
+    const targetKeys = (request?.targets ?? []).map((t: any) => JSON.stringify(t)).join('|');
+    const range = options.animationRange || '3h';
+    const cacheKey = `${dsUid}|${targetKeys}|${range}`;
+
+    // Skip if we already have cached frames for this exact request
+    if (lazyFrames && lazyCacheKeyRef.current === cacheKey) {
+      return;
+    }
+
+    if (!dsUid || !request?.targets?.length) {
+      return;
+    }
+
+    setLazyLoading(true);
+
+    (async () => {
+      try {
+        const ds: DataSourceApi = await getDataSourceSrv().get({ uid: dsUid });
+        const rangeMs = intervalToMs(range);
+        const to = Date.now();
+        const from = to - rangeMs;
+
+        const queryRequest: DataQueryRequest<DataQuery> = {
+          requestId: `matrix-lazy-${id}-${Date.now()}`,
+          interval: `${Math.floor(rangeMs / MAX_ANIMATION_FRAMES / 1000)}s`,
+          intervalMs: Math.floor(rangeMs / MAX_ANIMATION_FRAMES),
+          maxDataPoints: MAX_ANIMATION_FRAMES,
+          range: {
+            from: dateTime(from),
+            to: dateTime(to),
+            raw: { from: `now-${range}`, to: 'now' },
+          },
+          scopedVars: request.scopedVars ?? {},
+          targets: request.targets,
+          timezone: request.timezone ?? 'browser',
+          app: 'panel-editor',
+          startTime: Date.now(),
+        };
+
+        const response = await new Promise<any>((resolve, reject) => {
+          const sub = ds.query(queryRequest).subscribe({
+            next: (res: any) => resolve(res),
+            error: (err: any) => reject(err),
+            complete: () => {},
+          });
+          // Timeout after 30s
+          setTimeout(() => {
+            sub.unsubscribe();
+            reject(new Error('Lazy fetch timeout'));
+          }, 30000);
+        });
+
+        if (response?.data?.length > 0) {
+          const frames = buildAnimFrames(response.data);
+          if (frames) {
+            lazyCacheKeyRef.current = cacheKey;
+            setLazyFrames(frames);
+            setLazyLoading(false);
+            return;
+          }
+        }
+
+        // Fallback: no usable data from lazy fetch
+        setLazyLoading(false);
+      } catch (err) {
+        console.warn('[matrix] lazy fetch failed, falling back to panel data:', err);
+        setLazyLoading(false);
+      }
+    })();
+  }, [activeMode, data.request, options.animationRange, inlineAnimFrames, id, buildAnimFrames, lazyFrames]);
+
+  // Invalidate lazy cache when Grafana time range changes (user changed dashboard time)
+  const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
+  const prevTimeRangeRef = useRef(timeRangeKey);
+  useEffect(() => {
+    if (prevTimeRangeRef.current !== timeRangeKey) {
+      prevTimeRangeRef.current = timeRangeKey;
+      lazyCacheKeyRef.current = '';
+      setLazyFrames(null);
+    }
+  }, [timeRangeKey]);
 
   // Animation timer
   useEffect(() => {
@@ -150,12 +269,12 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
 
   // Compute parsed data for non-animation modes
   const parsedData = useMemo(() => {
-    if (options.timeMode === 'animate' && animFrames) {
+    if (activeMode === 'animate' && animFrames) {
       return animFrames.baseData;
     }
 
     // Aggregation mode
-    if (options.timeMode === 'aggregate' && data.series[0] && findTimeField(data.series[0])) {
+    if (activeMode === 'aggregate' && data.series[0] && findTimeField(data.series[0])) {
       const groups = groupBySourceTarget(
         data.series[0], options.sourceField, options.targetField, options.valueField,
       );
@@ -168,7 +287,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
 
     // Default: last value (also used by stepping mode)
     return parseData(data, options, theme);
-  }, [data, options, theme, animFrames]);
+  }, [data, options, theme, animFrames, activeMode]);
 
   // Initial render (createViz) -- runs once per data/layout change
   useEffect(() => {
@@ -181,34 +300,12 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
 
   // Animation frame update -- fast path, only updates fills
   useEffect(() => {
-    if (options.timeMode !== 'animate' || !animFrames || !ref.current || !animInitRef.current) {
+    if (activeMode !== 'animate' || !animFrames || !ref.current || !animInitRef.current) {
       return;
     }
     const frameIdx = Math.min(animIndex, animFrames.colors.length - 1);
     updateViz(ref.current, id, animFrames.colors[frameIdx]);
-  }, [animIndex, animFrames, id, options.timeMode]);
-
-  // Debug: log data state when in stepping mode
-  useEffect(() => {
-    if (options.timeMode === 'stepping') {
-      const fmt = 'YYYY-MM-DD HH:mm:ss';
-      console.log('[matrix-step] timeRange:', {
-        from: dateTime(timeRange.from).format(fmt),
-        to: dateTime(timeRange.to).format(fmt),
-        raw: timeRange.raw,
-      });
-      console.log('[matrix-step] series count:', data.series.length);
-      if (data.series[0]) {
-        const s = data.series[0];
-        console.log('[matrix-step] series[0] fields:', s.fields.map((f) => `${f.name}(${f.type})[${f.values.length}]`));
-      }
-      console.log('[matrix-step] parsedData:', {
-        rows: parsedData.rows?.length ?? 'null',
-        cols: parsedData.columns?.length ?? 'null',
-        data: typeof parsedData.data === 'string' ? parsedData.data : parsedData.data ? 'matrix' : 'null',
-      });
-    }
-  }, [options.timeMode, timeRange, data, parsedData]);
+  }, [animIndex, animFrames, id, activeMode]);
 
   // Stepping callbacks
   const handleStepForward = useCallback(() => {
@@ -217,10 +314,8 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     const newTo = Math.min(timeRange.to.valueOf() + ms, now);
     const newFrom = newTo - (timeRange.to.valueOf() - timeRange.from.valueOf());
     if (timeRange.to.valueOf() >= now) {
-      console.log('[matrix-step] already at now, not stepping forward');
       return;
     }
-    console.log('[matrix-step] stepping forward by', options.stepInterval || '60m', '(', ms, 'ms)');
     onChangeTimeRange({ from: newFrom, to: newTo });
   }, [options.stepInterval, timeRange, onChangeTimeRange]);
 
@@ -228,7 +323,6 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     const ms = intervalToMs(options.stepInterval || '60m');
     const newFrom = timeRange.from.valueOf() - ms;
     const newTo = timeRange.to.valueOf() - ms;
-    console.log('[matrix-step] stepping backward by', options.stepInterval || '60m', '(', ms, 'ms)');
     onChangeTimeRange({ from: newFrom, to: newTo });
   }, [options.stepInterval, timeRange, onChangeTimeRange]);
 
@@ -237,6 +331,18 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     const fmt = 'YYYY-MM-DD HH:mm';
     return `${dateTime(timeRange.from).format(fmt)} -- ${dateTime(timeRange.to).format(fmt)}`;
   }, [timeRange]);
+
+  // Handle mode change
+  const handleModeChange = useCallback((mode: TimeMode) => {
+    if (mode === activeMode) {
+      return;
+    }
+    // Stop animation when leaving animate mode
+    if (activeMode === 'animate') {
+      setAnimPlaying(false);
+    }
+    setActiveMode(mode);
+  }, [activeMode]);
 
   // Error states
   if (typeof parsedData.data === 'string') {
@@ -252,7 +358,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     return <div>No Data</div>;
   }
 
-  const matrixHeight = showControls ? height - CONTROLS_HEIGHT : height;
+  const matrixHeight = showBar ? height - CONTROLS_HEIGHT : height;
   const totalAnimFrames = animFrames?.colors.length ?? 0;
 
   return (
@@ -262,22 +368,21 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
           <div ref={ref} id={`matrix-panel-${id}`} style={{ width: '100%' }} />
         </CustomScrollbar>
       </div>
-      {options.timeMode === 'stepping' && (
+      {showBar && (
         <PlaybackControls
-          mode="stepping"
+          activeMode={activeMode}
+          onModeChange={handleModeChange}
+          loading={lazyLoading}
+          // Stepping props
           timeLabel={timeLabel}
           stepInterval={options.stepInterval || '60m'}
           onStepForward={handleStepForward}
           onStepBackward={handleStepBackward}
           onStepIntervalChange={() => {}}
-        />
-      )}
-      {options.timeMode === 'animate' && totalAnimFrames > 0 && (
-        <PlaybackControls
-          mode="animate"
+          // Animation props
           totalFrames={totalAnimFrames}
           currentIndex={animIndex}
-          frameLabel={animFrames!.labels[Math.min(animIndex, totalAnimFrames - 1)] ?? ''}
+          frameLabel={animFrames?.labels[Math.min(animIndex, totalAnimFrames - 1)] ?? ''}
           playing={animPlaying}
           speed={animSpeed}
           onPlay={() => {

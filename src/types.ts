@@ -37,6 +37,8 @@ export interface MatrixOptions {
   aggregation: 'last' | 'mean' | 'min' | 'max' | 'sum' | 'count' | 'range' | 'delta';
   stepInterval: string;
   animationSpeedMs: number;
+  showPlaybackBar: boolean;
+  animationRange: string;
 }
 
 export interface ExtraTooltipField {

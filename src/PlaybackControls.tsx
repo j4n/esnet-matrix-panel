@@ -25,8 +25,12 @@ const SPEED_OPTIONS = [
   { value: 20, label: '50x' },
 ];
 
+type TimeMode = 'last' | 'aggregate' | 'stepping' | 'animate';
+
 export interface PlaybackControlsProps {
-  mode: 'stepping' | 'animate';
+  activeMode: TimeMode;
+  onModeChange: (mode: TimeMode) => void;
+  loading?: boolean;
   // Stepping mode
   timeLabel?: string;
   stepInterval?: string;
@@ -56,6 +60,37 @@ const getPlaybackStyles = (theme: GrafanaTheme2) => ({
     font-family: ${theme.typography.fontFamily};
     font-size: ${theme.typography.size.sm};
     height: 40px;
+    flex-shrink: 0;
+  `,
+  modeButton: css`
+    background: ${theme.colors.background.primary};
+    border: 1px solid ${theme.colors.border.medium};
+    border-radius: ${theme.shape.radius.default};
+    color: ${theme.colors.text.secondary};
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: ${theme.typography.size.xs};
+    font-family: ${theme.typography.fontFamily};
+    line-height: 1.5;
+    &:hover {
+      background: ${theme.colors.action.hover};
+    }
+  `,
+  modeButtonActive: css`
+    background: ${theme.colors.primary.main};
+    border: 1px solid ${theme.colors.primary.main};
+    border-radius: ${theme.shape.radius.default};
+    color: ${theme.colors.primary.contrastText};
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: ${theme.typography.size.xs};
+    font-family: ${theme.typography.fontFamily};
+    line-height: 1.5;
+  `,
+  separator: css`
+    width: 1px;
+    height: 20px;
+    background: ${theme.colors.border.medium};
     flex-shrink: 0;
   `,
   button: css`
@@ -102,19 +137,61 @@ const getPlaybackStyles = (theme: GrafanaTheme2) => ({
     font-size: ${theme.typography.size.xs};
     white-space: nowrap;
   `,
+  loadingLabel: css`
+    color: ${theme.colors.text.secondary};
+    font-style: italic;
+    white-space: nowrap;
+  `,
 });
+
+const MODE_LABELS: Record<TimeMode, string> = {
+  last: 'Last',
+  aggregate: 'Aggr',
+  stepping: 'Step',
+  animate: 'Anim',
+};
+
+const AVAILABLE_MODES: TimeMode[] = ['last', 'stepping', 'animate'];
 
 export const PlaybackControls: React.FC<PlaybackControlsProps> = (props) => {
   const styles = useStyles2(getPlaybackStyles);
+  const { activeMode, onModeChange, loading } = props;
 
-  if (props.mode === 'stepping') {
+  const modeButtons = (
+    <>
+      {AVAILABLE_MODES.map((mode) => (
+        <button
+          key={mode}
+          className={activeMode === mode ? styles.modeButtonActive : styles.modeButton}
+          onClick={() => onModeChange(mode)}
+          title={`Switch to ${MODE_LABELS[mode]} mode`}
+        >
+          {MODE_LABELS[mode]}
+        </button>
+      ))}
+    </>
+  );
+
+  // Last mode: just show mode buttons
+  if (activeMode === 'last' || activeMode === 'aggregate') {
     return (
       <div className={styles.container}>
+        {modeButtons}
+      </div>
+    );
+  }
+
+  // Stepping mode
+  if (activeMode === 'stepping') {
+    return (
+      <div className={styles.container}>
+        {modeButtons}
+        <div className={styles.separator} />
         <button className={styles.button} onClick={props.onStepBackward} title="Step backward">
-          {'<<'}
+          {'\u25C0\u25C0'}
         </button>
         <button className={styles.button} onClick={props.onStepForward} title="Step forward">
-          {'>>'}
+          {'\u25B6\u25B6'}
         </button>
         <select
           className={styles.select}
@@ -132,32 +209,44 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = (props) => {
   }
 
   // Animation mode
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        {modeButtons}
+        <div className={styles.separator} />
+        <span className={styles.loadingLabel}>Loading...</span>
+      </div>
+    );
+  }
+
   const total = props.totalFrames ?? 0;
   const current = props.currentIndex ?? 0;
 
   return (
     <div className={styles.container}>
+      {modeButtons}
+      <div className={styles.separator} />
       <button
         className={styles.button}
         onClick={() => props.onSeek?.(0)}
         title="Jump to start"
       >
-        {'|<'}
+        {'\u23EE'}
       </button>
       <button
         className={styles.button}
         onClick={() => props.onSeek?.(Math.max(0, current - 1))}
         title="Step backward"
       >
-        {'<'}
+        {'\u25C0'}
       </button>
       {props.playing ? (
         <button className={styles.button} onClick={props.onPause} title="Pause">
-          {'||'}
+          {'\u23F8'}
         </button>
       ) : (
         <button className={styles.button} onClick={props.onPlay} title="Play">
-          {'>'}
+          {'\u25B6'}
         </button>
       )}
       <button
@@ -165,14 +254,14 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = (props) => {
         onClick={() => props.onSeek?.(Math.min(total - 1, current + 1))}
         title="Step forward"
       >
-        {'>'}
+        {'\u25B6\u25B6'}
       </button>
       <button
         className={styles.button}
         onClick={() => props.onSeek?.(total - 1)}
         title="Jump to end"
       >
-        {'>|'}
+        {'\u23ED'}
       </button>
       <input
         type="range"

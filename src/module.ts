@@ -41,6 +41,12 @@ plugin.setMigrationHandler((panel: { options: MatrixOptions; fieldConfig: FieldC
   if (panel.options.stepInterval === undefined) {
     panel.options.stepInterval = '60m';
   }
+  if ((panel.options as any).showPlaybackBar === undefined) {
+    (panel.options as any).showPlaybackBar = true;
+  }
+  if ((panel.options as any).animationRange === undefined) {
+    (panel.options as any).animationRange = '3h';
+  }
   return panel.options;
 });
 
@@ -344,8 +350,8 @@ plugin.setPanelOptions((builder) => {
   // Time Series Options
   builder.addSelect({
     path: 'timeMode',
-    name: 'Time Mode',
-    description: 'How to handle time series data. "Last" shows the most recent value (default). "Aggregate" collapses the time range with a function.',
+    name: 'Default Time Mode',
+    description: 'Initial mode when the panel loads. Users can switch interactively via the playback bar.',
     category: TimeSeriesCategory,
     defaultValue: 'last',
     settings: {
@@ -409,5 +415,29 @@ plugin.setPanelOptions((builder) => {
     showIf: (config) => config.timeMode === 'animate',
     defaultValue: 1000,
     settings: { integer: true, min: 50, max: 5000 },
+  });
+  builder.addBooleanSwitch({
+    path: 'showPlaybackBar',
+    name: 'Show Playback Bar',
+    description: 'Show the mode selector and playback controls at the bottom of the panel',
+    category: TimeSeriesCategory,
+    defaultValue: true,
+  });
+  builder.addSelect({
+    path: 'animationRange',
+    name: 'Animation Fetch Range',
+    description: 'Time range to fetch when switching to Animate mode interactively (lazy fetch)',
+    category: TimeSeriesCategory,
+    defaultValue: '3h',
+    settings: {
+      allowCustomValue: false,
+      options: [
+        { value: '1h', label: '1 hour' },
+        { value: '3h', label: '3 hours' },
+        { value: '6h', label: '6 hours' },
+        { value: '12h', label: '12 hours' },
+        { value: '24h', label: '24 hours' },
+      ],
+    },
   });
 });
