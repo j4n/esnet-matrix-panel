@@ -2,11 +2,11 @@
 
 A Grafana panel that renders a 2D matrix showing relationships between two categorical fields (e.g. source x destination). Cell color is driven by a numeric value field and Grafana's threshold system.
 
-> **Note:** This plugin is designed for categorical data, not time series. It will not render if there are more than 200 unique rows or columns.
+> **Note:** This plugin was originally designed for categorical data, not time series. It will not render if there are more than 200 unique rows or columns; however, this fork works well with timeseries data that has not too many dimensions, either aggregated with avg_by_time() on the Prometheus side or with the added animation.
 
 ![Matrix panel screenshot](dist/img/matrix-plugin.webp)
 
-This is a fork of [esnet/esnet-matrix-panel](https://github.com/esnet/esnet-matrix-panel)  -- thanks to ESnet for the original plugin. See [CHANGELOG.md](CHANGELOG.md) for a full list of changes relative to upstream.
+This is a fork of [esnet/esnet-matrix-panel](https://github.com/esnet/esnet-matrix-panel). Thanks to ESnet for the original plugin. See [CHANGELOG.md](CHANGELOG.md) for a full list of changes relative to upstream.
 
 ## Building
 
@@ -95,7 +95,7 @@ Cell color is determined by the numeric value field and the **Thresholds** confi
 When Time Mode is set to Stepping or Animate, a playback bar appears at the bottom of the panel with transport controls and an interactive mode switcher. From the bar you can switch between Last, Step, and Animate modes without opening panel edit.
 
 **Performance tips for time series queries:**
-- For fast dashboard load, use Time Mode *Last* with an instant query or a short time range.
+- **Use Instant queries for Last mode.** In each query's options, set Type to "Instant" instead of "Range". With range queries over 24h at 15m steps, Prometheus evaluates `avg_over_time(...[$__range])` 96 times (once per step), each scanning the full 24h of data. Instant queries evaluate once -- orders of magnitude faster.
 - Animate mode uses lazy fetching: it only requests range data when you click "Anim", so the initial panel load stays fast regardless of the configured animation range.
 
 ## Test Dashboard

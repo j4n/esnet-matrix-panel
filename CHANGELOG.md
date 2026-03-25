@@ -22,6 +22,11 @@
 - Both grouping axes can be used simultaneously
 - Duplicate-cell guard: skip overwrite when `dataMatrix[r][c]` is already populated
 
+### Improved Legends
+- Use HTML elements for both categorical and continous legends, allowing the
+  former to line wrap and the latter to have a working tool tip, use values from
+  the thresholds instead of sampling.
+
 ### Test dashboard
 - Added Panel 9 (column grouping by region), Panel 10 (row grouping by tier),
   Panel 11 (both axes grouped simultaneously)
