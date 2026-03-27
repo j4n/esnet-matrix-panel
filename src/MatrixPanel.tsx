@@ -89,11 +89,15 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
       return null;
     }
 
-    // Get the color mapping function from the original value field
+    // Get the color mapping function from the panel data's value field.
+    // Raw ds.query() responses do not have display processors attached -- Grafana
+    // adds those during panel field-override processing.  Using the argument frame's
+    // field would give undefined here for every lazy fetch, falling back to
+    // defaultColor for all cells.  The panel data prop always has display processors.
     const nullColor = theme.visualization.getColorByName(options.nullColor);
     const defaultColor = theme.visualization.getColorByName(options.defaultColor);
-    const originalValueField = frame.fields.find((f: any) => f.type === 'number');
-    const displayFn = originalValueField?.display;
+    const panelValueField = data.series[0]?.fields.find((f: any) => f.type === 'number');
+    const displayFn = panelValueField?.display;
 
     function colorFor(v: number | undefined): string {
       if (v === undefined || v === null) {
