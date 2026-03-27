@@ -33,8 +33,7 @@ export interface MatrixOptions {
   enableRowGrouping: boolean;
   rowCategoryHeaderWidth: number;
   rowCategoryGap: number;
-  timeMode: 'last' | 'aggregate' | 'stepping' | 'animate';
-  aggregation: 'last' | 'mean' | 'min' | 'max' | 'sum' | 'count' | 'range' | 'delta';
+  timeMode: 'last' | 'timelapse';
   stepInterval: string;
   animationSpeedMs: number;
   animationRange: string;

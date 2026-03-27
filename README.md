@@ -2,11 +2,9 @@
 
 A Grafana panel that renders a 2D matrix showing relationships between two categorical fields (e.g. source x destination). Cell color is driven by a numeric value field and Grafana's threshold system.
 
-> **Note:** This plugin was originally designed for categorical data, not time series. It will not render if there are more than 200 unique rows or columns; however, this fork works well with timeseries data that has not too many dimensions, either aggregated with avg_by_time() on the Prometheus side or with the added animation.
+This is a fork of [esnet/esnet-matrix-panel](https://github.com/esnet/esnet-matrix-panel) with added time series support: animated timelapse playback (up to 30 days), stepping, and an interactive playback bar. Requires a Prometheus-compatible datasource for timelapse features. Works well for visualizing how relationships between dimensions change over time. Limit is 200 unique rows or columns. Thanks to ESnet for the original plugin. See [CHANGELOG.md](CHANGELOG.md) for a full list of changes.
 
 ![Matrix panel screenshot](dist/img/matrix-plugin.webp)
-
-This is a fork of [esnet/esnet-matrix-panel](https://github.com/esnet/esnet-matrix-panel). Thanks to ESnet for the original plugin. See [CHANGELOG.md](CHANGELOG.md) for a full list of changes relative to upstream.
 
 ## Building
 
@@ -86,17 +84,47 @@ Cell color is determined by the numeric value field and the **Thresholds** confi
 
 | Option | Description |
 |--------|-------------|
-| **Time Mode** | How to handle time series data. *Last* (default) uses the most recent value. *Aggregate* collapses the range with a function. *Stepping* shifts the dashboard time window. *Animate* plays back frames client-side. |
-| **Aggregation Function** | Function for Aggregate mode: mean, min, max, sum, count, range (max-min), delta (last-first). |
-| **Step Interval** | How far to shift the dashboard time window per step in Stepping mode (15m to 30d). |
-| **Animation Speed (ms)** | Milliseconds between frames during Animate playback (50-5000, default 1000). |
-| **Animation Fetch Range** | Time range to fetch when switching to Animate mode interactively via the playback bar (1h-24h, default 3h). |
+| **Time Mode** | *Last* (default) shows the most recent value -- no bar, no extra fetches. *Timelapse* shows the playback bar with Step and Anim sub-modes. |
+| **Step Interval** | How far to shift the dashboard time window per step (15m to 30d). Visible when Time Mode is Timelapse. |
+| **Animation Speed (ms)** | Milliseconds between frames during Anim playback (50-5000, default 1000). Visible when Time Mode is Timelapse. |
+| **Animation Fetch Range** | Time range to fetch when switching to Anim sub-mode in the playback bar (1h to 30d, default 3h). Visible when Time Mode is Timelapse. |
 
-When Time Mode is set to Stepping or Animate, a playback bar appears at the bottom of the panel with transport controls and an interactive mode switcher. From the bar you can switch between Last, Step, and Animate modes without opening panel edit.
+When Time Mode is *Timelapse*, a playback bar appears at the bottom of the panel. The bar has two sub-mode buttons: **Step** (shifts the Grafana dashboard time window) and **Anim** (fetches frames and plays them back client-side). Sub-mode can be toggled at any time from the bar without opening panel edit.
 
-**Performance tips for time series queries:**
-- **Use Instant queries for Last mode.** In each query's options, set Type to "Instant" instead of "Range". With range queries over 24h at 15m steps, Prometheus evaluates `avg_over_time(...[$__range])` 96 times (once per step), each scanning the full 24h of data. Instant queries evaluate once -- orders of magnitude faster.
-- Animate mode uses lazy fetching: it only requests range data when you click "Anim", so the initial panel load stays fast regardless of the configured animation range.
+### Query setup
+
+A single query works for both time modes. Write your query using `$__range` and set the query type to **Instant**:
+
+    avg_over_time(my_metric{source=~".+", target=~".+"}[$__range])
+
+**How this works across modes:**
+
+In **Last mode**, Grafana sends an instant query. Prometheus evaluates `avg_over_time(metric[24h])` once at the current timestamp -- one evaluation covering the full dashboard window. Fast.
+
+In **Timelapse / Anim sub-mode**, the plugin fetches range data behind the scenes when you click "Anim". To make the animation show real temporal change, it automatically:
+
+1. Switches the query from instant to range (120 evaluation steps)
+2. Rewrites `$__range` to `$__interval` in your expression
+
+This turns `avg_over_time(metric[$__range])` into `avg_over_time(metric[$__interval])`, where `$__interval` is the animation range divided by 120 frames. For a 3-hour animation, each frame averages ~90 seconds of data. For a 7-day animation, each frame averages ~84 minutes.
+
+Without this rewrite, every frame would compute `avg_over_time(metric[3h])` -- a 3-hour sliding window -- and all 120 frames would look nearly identical.
+
+| Animation range | Frame interval | PromQL window per frame |
+|-----------------|----------------|-------------------------|
+| 1 hour          | 30s            | `avg_over_time(m[30s])` |
+| 3 hours         | 90s            | `avg_over_time(m[90s])` |
+| 24 hours        | 12 min         | `avg_over_time(m[12m])` |
+| 7 days          | 84 min         | `avg_over_time(m[84m])` |
+| 30 days         | 6 hours        | `avg_over_time(m[6h])`  |
+
+In **Timelapse / Step sub-mode**, Grafana shifts the dashboard time window by the step interval and re-executes your query as-is. No rewrite needed.
+
+**If you don't need server-side averaging**, just use the raw metric with Instant type:
+
+    my_metric{source=~".+", target=~".+"}
+
+Last mode returns the latest sample. Anim sub-mode returns one sample per frame with carry-forward for gaps.
 
 ## Test Dashboard
 

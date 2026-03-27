@@ -65,60 +65,6 @@ export function groupBySourceTarget(
   return groups;
 }
 
-/**
- * Aggregate each (source, target) group into a single value.
- */
-export function aggregateTimeSeries(
-  groups: Map<string, TimeSeriesPoint[]>,
-  aggregation: MatrixOptions['aggregation'],
-): Array<{ source: string; target: string; value: number }> {
-  const result: Array<{ source: string; target: string; value: number }> = [];
-
-  for (const [key, points] of groups.entries()) {
-    const [source, target] = key.split('|');
-    if (points.length === 0) {
-      continue;
-    }
-
-    const values = points.map((p) => p.value);
-    let aggregated: number;
-
-    switch (aggregation) {
-      case 'mean': {
-        const sum = values.reduce((a, b) => a + b, 0);
-        aggregated = sum / values.length;
-        break;
-      }
-      case 'min':
-        aggregated = Math.min(...values);
-        break;
-      case 'max':
-        aggregated = Math.max(...values);
-        break;
-      case 'sum':
-        aggregated = values.reduce((a, b) => a + b, 0);
-        break;
-      case 'count':
-        aggregated = values.length;
-        break;
-      case 'range':
-        aggregated = Math.max(...values) - Math.min(...values);
-        break;
-      case 'delta':
-        aggregated = values[values.length - 1] - values[0];
-        break;
-      case 'last':
-      default:
-        aggregated = values[values.length - 1];
-        break;
-    }
-
-    result.push({ source, target, value: aggregated });
-  }
-
-  return result;
-}
-
 const MAX_ANIMATION_FRAMES = 120;
 
 /**

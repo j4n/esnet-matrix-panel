@@ -6,10 +6,8 @@ import { AnimationFrames, MatrixOptions } from './types';
 import { parseData } from './dataParser';
 import { createViz, updateViz } from './createViz';
 import { getStyles } from './tooltip';
-import { findTimeField, groupBySourceTarget, aggregateTimeSeries, buildSyntheticPanelData, sliceTimeSeries } from './timeSeriesProcessor';
+import { findTimeField, groupBySourceTarget, buildSyntheticPanelData, sliceTimeSeries } from './timeSeriesProcessor';
 import { PlaybackControls } from './PlaybackControls';
-
-type TimeMode = 'last' | 'aggregate' | 'stepping' | 'animate';
 
 /** Parse interval strings like '15m', '3h', '7d' into milliseconds. */
 function intervalToMs(interval: string): number {
@@ -36,8 +34,8 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
   const styles = useStyles2(getStyles);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Interactive mode state -- initialized from panel option
-  const [activeMode, setActiveMode] = useState<TimeMode>(options.timeMode);
+  // Sub-mode within timelapse bar
+  const [activeSubMode, setActiveSubMode] = useState<'stepping' | 'animate'>('stepping');
 
   // Animation state
   const [animPlaying, setAnimPlaying] = useState(false);
@@ -52,7 +50,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
   // Cache key: tracks what data request + range was used for the cached frames
   const lazyCacheKeyRef = useRef<string>('');
 
-  const showBar = activeMode !== 'last' && activeMode !== 'aggregate';
+  const showBar = options.timeMode === 'timelapse';
 
   // Build animation frames from DataFrame[] (used by both inline and lazy-fetched data)
   const buildAnimFrames = useCallback((series: any): AnimationFrames | null => {
@@ -126,16 +124,16 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     return { labels, colors, baseData };
   }, [data, options, theme]);
 
-  // Pre-compute animation frames from inline panel data (when timeMode is 'animate')
+  // Pre-compute animation frames from inline panel data when in timelapse mode
   const inlineAnimFrames: AnimationFrames | null = useMemo(() => {
-    if (options.timeMode !== 'animate') {
+    if (options.timeMode !== 'timelapse') {
       return null;
     }
     return buildAnimFrames(data.series);
   }, [data, options.timeMode, buildAnimFrames]);
 
   // Determine which animation frames to use: lazy-fetched or inline
-  const animFrames = activeMode === 'animate' ? (lazyFrames ?? inlineAnimFrames) : null;
+  const animFrames = activeSubMode === 'animate' ? (lazyFrames ?? inlineAnimFrames) : null;
 
   // Reset animation when frames change
   useEffect(() => {
@@ -144,9 +142,9 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     animInitRef.current = false;
   }, [animFrames]);
 
-  // Lazy fetch when switching to animate mode interactively
+  // Lazy fetch when switching to animate sub-mode
   useEffect(() => {
-    if (activeMode !== 'animate') {
+    if (activeSubMode !== 'animate') {
       return;
     }
 
@@ -191,7 +189,16 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
             raw: { from: `now-${range}`, to: 'now' },
           },
           scopedVars: request.scopedVars ?? {},
-          targets: request.targets,
+          targets: request.targets.map((t: any) => ({
+            ...t,
+            instant: false,
+            range: true,
+            // Rewrite $__range to $__interval so each frame averages one step,
+            // not the full animation window (which would make all frames identical)
+            expr: typeof t.expr === 'string'
+              ? t.expr.replace(/\$__range/g, '$__interval')
+              : t.expr,
+          })),
           timezone: request.timezone ?? 'browser',
           app: 'panel-editor',
           startTime: Date.now(),
@@ -227,7 +234,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
         setLazyLoading(false);
       }
     })();
-  }, [activeMode, data.request, options.animationRange, inlineAnimFrames, id, buildAnimFrames, lazyFrames]);
+  }, [activeSubMode, data.request, options.animationRange, inlineAnimFrames, id, buildAnimFrames, lazyFrames]);
 
   // Invalidate lazy cache when Grafana time range changes (user changed dashboard time)
   const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
@@ -262,27 +269,13 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     };
   }, [animPlaying, animSpeed, animFrames]);
 
-  // Compute parsed data for non-animation modes
+  // Compute parsed data
   const parsedData = useMemo(() => {
-    if (activeMode === 'animate' && animFrames) {
+    if (activeSubMode === 'animate' && animFrames) {
       return animFrames.baseData;
     }
-
-    // Aggregation mode
-    if (activeMode === 'aggregate' && data.series[0] && findTimeField(data.series[0])) {
-      const groups = groupBySourceTarget(
-        data.series[0], options.sourceField, options.targetField, options.valueField,
-      );
-      if (groups.size > 0) {
-        const aggregated = aggregateTimeSeries(groups, options.aggregation || 'mean');
-        const syntheticData = buildSyntheticPanelData(aggregated, data, options);
-        return parseData(syntheticData, options, theme);
-      }
-    }
-
-    // Default: last value (also used by stepping mode)
     return parseData(data, options, theme);
-  }, [data, options, theme, animFrames, activeMode]);
+  }, [data, options, theme, animFrames, activeSubMode]);
 
   // Initial render (createViz) -- runs once per data/layout change
   useEffect(() => {
@@ -295,12 +288,12 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
 
   // Animation frame update -- fast path, only updates fills
   useEffect(() => {
-    if (activeMode !== 'animate' || !animFrames || !ref.current || !animInitRef.current) {
+    if (activeSubMode !== 'animate' || !animFrames || !ref.current || !animInitRef.current) {
       return;
     }
     const frameIdx = Math.min(animIndex, animFrames.colors.length - 1);
     updateViz(ref.current, id, animFrames.colors[frameIdx]);
-  }, [animIndex, animFrames, id, activeMode]);
+  }, [animIndex, animFrames, id, activeSubMode]);
 
   // Stepping callbacks
   const handleStepForward = useCallback(() => {
@@ -308,7 +301,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     const now = Date.now();
     const newTo = Math.min(timeRange.to.valueOf() + ms, now);
     const newFrom = newTo - (timeRange.to.valueOf() - timeRange.from.valueOf());
-    if (timeRange.to.valueOf() >= now) {
+    if (timeRange.to.valueOf() > now) {
       return;
     }
     onChangeTimeRange({ from: newFrom, to: newTo });
@@ -324,20 +317,19 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
   // Format time label for stepping mode
   const timeLabel = useMemo(() => {
     const fmt = 'YYYY-MM-DD HH:mm';
-    return `${dateTime(timeRange.from).format(fmt)} -- ${dateTime(timeRange.to).format(fmt)}`;
+    return `${timeRange.from.format(fmt)} -- ${timeRange.to.format(fmt)}`;
   }, [timeRange]);
 
-  // Handle mode change
-  const handleModeChange = useCallback((mode: TimeMode) => {
-    if (mode === activeMode) {
+  // Handle sub-mode change within timelapse bar
+  const handleModeChange = useCallback((mode: 'stepping' | 'animate') => {
+    if (mode === activeSubMode) {
       return;
     }
-    // Stop animation when leaving animate mode
-    if (activeMode === 'animate') {
+    if (activeSubMode === 'animate') {
       setAnimPlaying(false);
     }
-    setActiveMode(mode);
-  }, [activeMode]);
+    setActiveSubMode(mode);
+  }, [activeSubMode]);
 
   // Error states
   if (typeof parsedData.data === 'string') {
@@ -365,7 +357,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
       </div>
       {showBar && (
         <PlaybackControls
-          activeMode={activeMode}
+          activeMode={activeSubMode}
           onModeChange={handleModeChange}
           loading={lazyLoading}
           // Stepping props

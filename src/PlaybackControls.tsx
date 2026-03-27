@@ -25,11 +25,11 @@ const SPEED_OPTIONS = [
   { value: 20, label: '50x' },
 ];
 
-type TimeMode = 'last' | 'aggregate' | 'stepping' | 'animate';
+type SubMode = 'stepping' | 'animate';
 
 export interface PlaybackControlsProps {
-  activeMode: TimeMode;
-  onModeChange: (mode: TimeMode) => void;
+  activeMode: SubMode;
+  onModeChange: (mode: SubMode) => void;
   loading?: boolean;
   // Stepping mode
   timeLabel?: string;
@@ -118,6 +118,7 @@ const getPlaybackStyles = (theme: GrafanaTheme2) => ({
     font-size: ${theme.typography.size.sm};
     padding: 2px 4px;
     cursor: pointer;
+    max-width: 60px;
   `,
   label: css`
     color: ${theme.colors.text.secondary};
@@ -144,14 +145,12 @@ const getPlaybackStyles = (theme: GrafanaTheme2) => ({
   `,
 });
 
-const MODE_LABELS: Record<TimeMode, string> = {
-  last: 'Last',
-  aggregate: 'Aggr',
+const MODE_LABELS: Record<SubMode, string> = {
   stepping: 'Step',
   animate: 'Anim',
 };
 
-const AVAILABLE_MODES: TimeMode[] = ['last', 'stepping', 'animate'];
+const AVAILABLE_MODES: SubMode[] = ['stepping', 'animate'];
 
 export const PlaybackControls: React.FC<PlaybackControlsProps> = (props) => {
   const styles = useStyles2(getPlaybackStyles);
@@ -171,15 +170,6 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = (props) => {
       ))}
     </>
   );
-
-  // Last mode: just show mode buttons
-  if (activeMode === 'last' || activeMode === 'aggregate') {
-    return (
-      <div className={styles.container}>
-        {modeButtons}
-      </div>
-    );
-  }
 
   // Stepping mode
   if (activeMode === 'stepping') {

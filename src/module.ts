@@ -32,11 +32,14 @@ plugin.setMigrationHandler((panel: { options: MatrixOptions; fieldConfig: FieldC
   if (panel.options.sortType === undefined) {
     panel.options.sortType = 'natural-asc';
   }
-  if (panel.options.timeMode === undefined) {
+  // Migrate old 4-value timeMode to simplified 2-value
+  const oldMode = panel.options.timeMode as any;
+  if (oldMode === 'aggregate') {
     panel.options.timeMode = 'last';
-  }
-  if (panel.options.aggregation === undefined) {
-    panel.options.aggregation = 'mean';
+  } else if (oldMode === 'stepping' || oldMode === 'animate') {
+    panel.options.timeMode = 'timelapse';
+  } else if (oldMode === undefined) {
+    panel.options.timeMode = 'last';
   }
   if (panel.options.stepInterval === undefined) {
     panel.options.stepInterval = '60m';
@@ -348,37 +351,14 @@ plugin.setPanelOptions((builder) => {
   builder.addSelect({
     path: 'timeMode',
     name: 'Time Mode',
-    description: 'How to handle time series data. "Last" shows the most recent value (default). "Aggregate" collapses the time range with a function.',
+    description: 'How to handle time series data. "Last" shows the most recent value. "Timelapse" enables the playback bar with Step and Animate sub-modes.',
     category: TimeSeriesCategory,
     defaultValue: 'last',
     settings: {
       allowCustomValue: false,
       options: [
         { value: 'last', label: 'Last value (default)' },
-        { value: 'aggregate', label: 'Aggregate over time range' },
-        { value: 'stepping', label: 'Step through time (server-side)' },
-        { value: 'animate', label: 'Animate over time (client-side)' },
-      ],
-    },
-  });
-  builder.addSelect({
-    path: 'aggregation',
-    name: 'Aggregation Function',
-    description: 'How to combine multiple time points per source/target pair',
-    category: TimeSeriesCategory,
-    defaultValue: 'mean',
-    showIf: (config) => config.timeMode === 'aggregate',
-    settings: {
-      allowCustomValue: false,
-      options: [
-        { value: 'last', label: 'Last' },
-        { value: 'mean', label: 'Mean' },
-        { value: 'min', label: 'Min' },
-        { value: 'max', label: 'Max' },
-        { value: 'sum', label: 'Sum' },
-        { value: 'count', label: 'Count' },
-        { value: 'range', label: 'Range (max - min)' },
-        { value: 'delta', label: 'Delta (last - first)' },
+        { value: 'timelapse', label: 'Timelapse (step / animate)' },
       ],
     },
   });
@@ -388,7 +368,7 @@ plugin.setPanelOptions((builder) => {
     description: 'How far to shift the dashboard time window per step',
     category: TimeSeriesCategory,
     defaultValue: '60m',
-    showIf: (config) => config.timeMode === 'stepping',
+    showIf: (config) => config.timeMode === 'timelapse',
     settings: {
       allowCustomValue: false,
       options: [
@@ -409,16 +389,17 @@ plugin.setPanelOptions((builder) => {
     name: 'Animation Speed (ms)',
     description: 'Milliseconds between frames during playback',
     category: TimeSeriesCategory,
-    showIf: (config) => config.timeMode === 'animate',
+    showIf: (config) => config.timeMode === 'timelapse',
     defaultValue: 1000,
     settings: { integer: true, min: 50, max: 5000 },
   });
   builder.addSelect({
     path: 'animationRange',
     name: 'Animation Fetch Range',
-    description: 'Time range to fetch when switching to Animate mode interactively (lazy fetch)',
+    description: 'Time range to fetch when switching to Animate sub-mode in the playback bar',
     category: TimeSeriesCategory,
     defaultValue: '3h',
+    showIf: (config) => config.timeMode === 'timelapse',
     settings: {
       allowCustomValue: false,
       options: [
@@ -426,7 +407,11 @@ plugin.setPanelOptions((builder) => {
         { value: '3h', label: '3 hours' },
         { value: '6h', label: '6 hours' },
         { value: '12h', label: '12 hours' },
-        { value: '24h', label: '24 hours' },
+        { value: '24h', label: '1 day' },
+        { value: '3d', label: '3 days' },
+        { value: '7d', label: '7 days' },
+        { value: '14d', label: '14 days' },
+        { value: '30d', label: '30 days' },
       ],
     },
   });
