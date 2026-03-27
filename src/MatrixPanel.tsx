@@ -150,8 +150,9 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
       return;
     }
 
-    // If we already have inline frames from panel data (timeMode was already 'animate'), use those
-    if (inlineAnimFrames) {
+    // If panel data already has real temporal range (>1 frame), use it directly.
+    // A single-frame result from an instant query must NOT suppress the range fetch.
+    if (inlineAnimFrames && inlineAnimFrames.labels.length > 1) {
       return;
     }
 
