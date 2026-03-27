@@ -87,9 +87,8 @@ Cell color is determined by the numeric value field and the **Thresholds** confi
 | **Time Mode** | *Last* (default) shows the most recent value -- no bar, no extra fetches. *Timelapse* shows the playback bar with Step and Anim sub-modes. |
 | **Step Interval** | How far to shift the dashboard time window per step (15m to 30d). Visible when Time Mode is Timelapse. |
 | **Animation Speed (ms)** | Milliseconds between frames during Anim playback (50-5000, default 1000). Visible when Time Mode is Timelapse. |
-| **Animation Fetch Range** | Time range to fetch when switching to Anim sub-mode in the playback bar (1h to 30d, default 3h). Visible when Time Mode is Timelapse. |
 
-When Time Mode is *Timelapse*, a playback bar appears at the bottom of the panel. The bar has two sub-mode buttons: **Step** (shifts the Grafana dashboard time window) and **Anim** (fetches frames and plays them back client-side). Sub-mode can be toggled at any time from the bar without opening panel edit.
+When Time Mode is *Timelapse*, a playback bar appears at the bottom of the panel. The bar has two sub-mode buttons: **Step** (shifts the Grafana dashboard time window) and **Anim** (fetches 120 frames covering the current dashboard time range and plays them back client-side). Use the Grafana time range picker at the top of the page to control how much history Anim loads. Sub-mode can be toggled at any time from the bar without opening panel edit.
 
 ### Query setup
 
@@ -106,17 +105,17 @@ In **Timelapse / Anim sub-mode**, the plugin fetches range data behind the scene
 1. Switches the query from instant to range (120 evaluation steps)
 2. Rewrites `$__range` to `$__interval` in your expression
 
-This turns `avg_over_time(metric[$__range])` into `avg_over_time(metric[$__interval])`, where `$__interval` is the animation range divided by 120 frames. For a 3-hour animation, each frame averages ~90 seconds of data. For a 7-day animation, each frame averages ~84 minutes.
+This turns `avg_over_time(metric[$__range])` into `avg_over_time(metric[$__interval])`, where `$__interval` is the dashboard time range divided by 120 frames. The dashboard time range picker controls how much history is animated.
 
-Without this rewrite, every frame would compute `avg_over_time(metric[3h])` -- a 3-hour sliding window -- and all 120 frames would look nearly identical.
+Without this rewrite, every frame would compute `avg_over_time(metric[6h])` -- a sliding window equal to the full range -- and all 120 frames would look nearly identical.
 
-| Animation range | Frame interval | PromQL window per frame |
-|-----------------|----------------|-------------------------|
-| 1 hour          | 30s            | `avg_over_time(m[30s])` |
-| 3 hours         | 90s            | `avg_over_time(m[90s])` |
-| 24 hours        | 12 min         | `avg_over_time(m[12m])` |
-| 7 days          | 84 min         | `avg_over_time(m[84m])` |
-| 30 days         | 6 hours        | `avg_over_time(m[6h])`  |
+| Dashboard time range | Frame interval | PromQL window per frame |
+|----------------------|----------------|-------------------------|
+| 1 hour               | 30s            | `avg_over_time(m[30s])` |
+| 3 hours              | 90s            | `avg_over_time(m[90s])` |
+| 24 hours             | 12 min         | `avg_over_time(m[12m])` |
+| 7 days               | 84 min         | `avg_over_time(m[84m])` |
+| 30 days              | 6 hours        | `avg_over_time(m[6h])`  |
 
 In **Timelapse / Step sub-mode**, Grafana shifts the dashboard time window by the step interval and re-executes your query as-is. No rewrite needed.
 

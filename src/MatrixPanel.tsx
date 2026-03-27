@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { dateTime, PanelProps, DataQueryRequest, DataQuery, DataSourceApi } from '@grafana/data';
+import { PanelProps, DataQueryRequest, DataQuery, DataSourceApi } from '@grafana/data';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { useTheme2, useStyles2, CustomScrollbar } from '@grafana/ui';
 import { AnimationFrames, MatrixOptions } from './types';
@@ -160,12 +160,12 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
       return;
     }
 
-    // Build cache key from datasource uid + targets + animation range
+    // Build cache key from datasource uid + targets + current time range
     const request = data.request;
     const dsUid = request?.targets?.[0]?.datasource?.uid ?? '';
     const targetKeys = (request?.targets ?? []).map((t: any) => JSON.stringify(t)).join('|');
-    const range = options.animationRange || '3h';
-    const cacheKey = `${dsUid}|${targetKeys}|${range}`;
+    const rangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;
+    const cacheKey = `${dsUid}|${targetKeys}|${rangeKey}`;
 
     // Skip if we already have cached frames for this exact request
     if (lazyFrames && lazyCacheKeyRef.current === cacheKey) {
@@ -181,9 +181,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
     (async () => {
       try {
         const ds: DataSourceApi = await getDataSourceSrv().get({ uid: dsUid });
-        const rangeMs = intervalToMs(range);
-        const to = Date.now();
-        const from = to - rangeMs;
+        const rangeMs = timeRange.to.valueOf() - timeRange.from.valueOf();
 
         const queryRequest: DataQueryRequest<DataQuery> = {
           requestId: `matrix-lazy-${id}-${Date.now()}`,
@@ -191,9 +189,9 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
           intervalMs: Math.floor(rangeMs / MAX_ANIMATION_FRAMES),
           maxDataPoints: MAX_ANIMATION_FRAMES,
           range: {
-            from: dateTime(from),
-            to: dateTime(to),
-            raw: { from: `now-${range}`, to: 'now' },
+            from: timeRange.from,
+            to: timeRange.to,
+            raw: timeRange.raw,
           },
           scopedVars: request.scopedVars ?? {},
           targets: request.targets.map((t: any) => ({
@@ -242,7 +240,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
         setLazyLoading(false);
       }
     })();
-  }, [activeSubMode, data.request, options.animationRange, inlineAnimFrames, id, buildAnimFrames, lazyFrames]);
+  }, [activeSubMode, data.request, timeRange, inlineAnimFrames, id, buildAnimFrames, lazyFrames]);
 
   // Invalidate lazy cache when Grafana time range changes (user changed dashboard time)
   const timeRangeKey = `${timeRange.from.valueOf()}-${timeRange.to.valueOf()}`;

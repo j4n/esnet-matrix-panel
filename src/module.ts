@@ -44,9 +44,6 @@ plugin.setMigrationHandler((panel: { options: MatrixOptions; fieldConfig: FieldC
   if (panel.options.stepInterval === undefined) {
     panel.options.stepInterval = '60m';
   }
-  if ((panel.options as any).animationRange === undefined) {
-    (panel.options as any).animationRange = '3h';
-  }
   return panel.options;
 });
 
@@ -392,27 +389,5 @@ plugin.setPanelOptions((builder) => {
     showIf: (config) => config.timeMode === 'timelapse',
     defaultValue: 1000,
     settings: { integer: true, min: 50, max: 5000 },
-  });
-  builder.addSelect({
-    path: 'animationRange',
-    name: 'Animation Fetch Range',
-    description: 'Time range to fetch when switching to Animate sub-mode in the playback bar',
-    category: TimeSeriesCategory,
-    defaultValue: '3h',
-    showIf: (config) => config.timeMode === 'timelapse',
-    settings: {
-      allowCustomValue: false,
-      options: [
-        { value: '1h', label: '1 hour' },
-        { value: '3h', label: '3 hours' },
-        { value: '6h', label: '6 hours' },
-        { value: '12h', label: '12 hours' },
-        { value: '24h', label: '1 day' },
-        { value: '3d', label: '3 days' },
-        { value: '7d', label: '7 days' },
-        { value: '14d', label: '14 days' },
-        { value: '30d', label: '30 days' },
-      ],
-    },
   });
 });

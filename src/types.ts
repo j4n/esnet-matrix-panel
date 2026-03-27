@@ -36,7 +36,6 @@ export interface MatrixOptions {
   timeMode: 'last' | 'timelapse';
   stepInterval: string;
   animationSpeedMs: number;
-  animationRange: string;
 }
 
 export interface ExtraTooltipField {
