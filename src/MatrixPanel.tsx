@@ -36,6 +36,8 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
 
   // Sub-mode within timelapse bar
   const [activeSubMode, setActiveSubMode] = useState<'stepping' | 'animate'>('stepping');
+  // Step interval: local state so the bar dropdown works without opening the options panel
+  const [stepInterval, setStepInterval] = useState(options.stepInterval || '60m');
 
   // Animation state
   const [animPlaying, setAnimPlaying] = useState(false);
@@ -228,6 +230,7 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
         }
 
         // Fallback: no usable data from lazy fetch
+        console.warn('[matrix] lazy fetch returned no usable frames (empty response or no time field)');
         setLazyLoading(false);
       } catch (err) {
         console.warn('[matrix] lazy fetch failed, falling back to panel data:', err);
@@ -297,22 +300,20 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
 
   // Stepping callbacks
   const handleStepForward = useCallback(() => {
-    const ms = intervalToMs(options.stepInterval || '60m');
+    const ms = intervalToMs(stepInterval);
     const now = Date.now();
-    const newTo = Math.min(timeRange.to.valueOf() + ms, now);
-    const newFrom = newTo - (timeRange.to.valueOf() - timeRange.from.valueOf());
-    if (timeRange.to.valueOf() > now) {
-      return;
+    const newTo = timeRange.to.valueOf() + ms;
+    if (newTo > now) {
+      return; // already at or past the live edge
     }
-    onChangeTimeRange({ from: newFrom, to: newTo });
-  }, [options.stepInterval, timeRange, onChangeTimeRange]);
+    const span = timeRange.to.valueOf() - timeRange.from.valueOf();
+    onChangeTimeRange({ from: newTo - span, to: newTo });
+  }, [stepInterval, timeRange, onChangeTimeRange]);
 
   const handleStepBackward = useCallback(() => {
-    const ms = intervalToMs(options.stepInterval || '60m');
-    const newFrom = timeRange.from.valueOf() - ms;
-    const newTo = timeRange.to.valueOf() - ms;
-    onChangeTimeRange({ from: newFrom, to: newTo });
-  }, [options.stepInterval, timeRange, onChangeTimeRange]);
+    const ms = intervalToMs(stepInterval);
+    onChangeTimeRange({ from: timeRange.from.valueOf() - ms, to: timeRange.to.valueOf() - ms });
+  }, [stepInterval, timeRange, onChangeTimeRange]);
 
   // Format time label for stepping mode
   const timeLabel = useMemo(() => {
@@ -362,10 +363,10 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
           loading={lazyLoading}
           // Stepping props
           timeLabel={timeLabel}
-          stepInterval={options.stepInterval || '60m'}
+          stepInterval={stepInterval}
           onStepForward={handleStepForward}
           onStepBackward={handleStepBackward}
-          onStepIntervalChange={() => {}}
+          onStepIntervalChange={setStepInterval}
           // Animation props
           totalFrames={totalAnimFrames}
           currentIndex={animIndex}
