@@ -5,7 +5,7 @@
   "id": "esnet-matrix-panel",
 
   "info": {
-    "description": "Matrix Panel Plugin that allows comparison of two non-timeseries categories",
+    "description": "Matrix panel showing relationships between two categorical fields, with timelapse playback and category grouping",
     "author": {
       "name": "Esnet"
     },

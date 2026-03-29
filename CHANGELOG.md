@@ -3,14 +3,15 @@
 ## Unreleased
 
 ### Time Series Support
-- **Time modes**: last (default), aggregate, stepping, animate
-- **Playback bar**: appears automatically for stepping/animate modes with
-  interactive mode switcher and unicode transport controls
-- **Lazy fetch**: animate mode fetches range data on demand via datasource API,
-  so dashboards load fast even with large time ranges
+- **Time modes**: last (default) and timelapse with two sub-modes (step / animate)
+- **Playback bar**: appears when time mode is timelapse, with interactive
+  sub-mode switcher and unicode transport controls
+- **Lazy fetch**: animate sub-mode fetches range data on demand via datasource
+  API, so dashboards load fast even with large time ranges
 - **Stepping**: shifts dashboard time window forward/backward by configurable
-  interval
-- **Aggregation**: collapse time range with mean/min/max/sum/count/range/delta
+  interval (15m to 30d)
+- **Animate**: fetches 120 frames covering the dashboard time range, rewrites
+  `$__range` to `$__interval` for proper per-frame windowing
 
 ### New Categorize Features (from upstream PR #26 `categorize` branch)
 - **Column grouping**: group columns by a category field with visual gaps and
@@ -23,7 +24,7 @@
 - Duplicate-cell guard: skip overwrite when `dataMatrix[r][c]` is already populated
 
 ### Improved Legends
-- Use HTML elements for both categorical and continous legends, allowing the
+- Use HTML elements for both categorical and continuous legends, allowing the
   former to line wrap and the latter to have a working tool tip, use values from
   the thresholds instead of sampling.
 

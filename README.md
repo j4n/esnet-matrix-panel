@@ -67,6 +67,21 @@ Then hard-reload the browser (Ctrl+Shift+R) to pick up the new module.
 | **Null Color** | Color for cells where the query returned null. |
 | **No Data Color** | Color for source/target pairs with no matching data. |
 
+### Grouping
+
+| Option | Description |
+|--------|-------------|
+| **Enable Column Grouping** | Group columns by a category field with visual gaps and rotated headers. |
+| **Column Category Field** | The field whose values define column categories (e.g. "region"). |
+| **Category Header Height** | Height in pixels for rotated category header labels (20-300, default 100). |
+| **Gap Between Column Groups** | Extra spacing in pixels between category groups (0-200, default 4). |
+| **Enable Row Grouping** | Group rows by a category field with visual gaps and horizontal headers. |
+| **Row Category Field** | The field whose values define row categories (e.g. "tier"). |
+| **Row Category Header Width** | Width in pixels for row category header labels (50-300, default 100). |
+| **Gap Between Row Groups** | Extra spacing in pixels between row groups (0-200, default 4). |
+
+Both column and row grouping can be used simultaneously.
+
 ### Colors
 
 Cell color is determined by the numeric value field and the **Thresholds** configured under Grafana's standard *Field Configuration* options.
@@ -134,7 +149,7 @@ To use it:
 1. In Grafana, go to **Connections -> Data sources -> Add data source** and add **TestData DB** (search for "TestData"). No configuration needed.
 2. Import the dashboard via **Dashboards -> Import**, then paste or upload `doc/test-dashboard.json`.
 
-The dashboard contains 8 panels covering:
+The dashboard contains 11 panels covering:
 
 | Panel | What it tests |
 |-------|---------------|
@@ -146,3 +161,6 @@ The dashboard contains 8 panels covering:
 | 6. Field Pickers | Explicit `sourceField`/`targetField`/`valueField` selection |
 | 7. Migration | Panel saved without `sortType` (tests migration handler) |
 | 8. Empty Query | No data -> "No Data" message |
+| 9. Column Grouping | Columns grouped by region category |
+| 10. Row Grouping | Rows grouped by tier category |
+| 11. Both Axes Grouped | Column and row grouping simultaneously |
