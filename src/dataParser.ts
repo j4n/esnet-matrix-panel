@@ -279,7 +279,7 @@ export function parseData(data: PanelData, options: MatrixOptions, theme: Grafan
     let tempValues: (number | string)[] = [];
     if (options.legendType === 'range') {
       const thresholds = valueField!.config.thresholds;
-      const allValues: number[] = Object.values(frame.fields[valKey].values)
+      const allValues: number[] = Object.values(valueField!.values)
         .filter((v): v is number => typeof v === 'number' && !isNaN(v));
       const min = Math.min(...allValues);
       const max = Math.max(...allValues);
@@ -301,7 +301,7 @@ export function parseData(data: PanelData, options: MatrixOptions, theme: Grafan
         }
       }
     } else {
-      tempValues = [...new Set<string>(Object.values(frame.fields[valKey].values))];
+      tempValues = [...new Set<string>(Object.values(valueField!.values))];
       if (options.sortType === 'natural-asc' || options.sortType === 'natural-desc') {
         const naturalSort = (a: string, b: string) =>
           a.toString().localeCompare(b.toString(), undefined, { numeric: true });

@@ -176,11 +176,13 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
       return;
     }
 
+    let cancelled = false;
     setLazyLoading(true);
 
     (async () => {
       try {
         const ds: DataSourceApi = await getDataSourceSrv().get({ uid: dsUid });
+        if (cancelled) { return; }
         const rangeMs = timeRange.to.valueOf() - timeRange.from.valueOf();
 
         const queryRequest: DataQueryRequest<DataQuery> = {
@@ -222,6 +224,8 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
           }, 30000);
         });
 
+        if (cancelled) { return; }
+
         if (response?.data?.length > 0) {
           const frames = buildAnimFrames(response.data);
           if (frames) {
@@ -236,10 +240,13 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
         console.warn('[matrix] lazy fetch returned no usable frames (empty response or no time field)');
         setLazyLoading(false);
       } catch (err) {
+        if (cancelled) { return; }
         console.warn('[matrix] lazy fetch failed, falling back to panel data:', err);
         setLazyLoading(false);
       }
     })();
+
+    return () => { cancelled = true; };
   }, [activeSubMode, data.request, timeRange, inlineAnimFrames, id, buildAnimFrames, lazyFrames]);
 
   // Invalidate lazy cache when Grafana time range changes (user changed dashboard time)
