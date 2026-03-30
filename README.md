@@ -149,7 +149,7 @@ To use it:
 1. In Grafana, go to **Connections -> Data sources -> Add data source** and add **TestData DB** (search for "TestData"). No configuration needed.
 2. Import the dashboard via **Dashboards -> Import**, then paste or upload `doc/test-dashboard.json`.
 
-The dashboard contains 11 panels covering:
+The dashboard contains 17 panels covering:
 
 | Panel | What it tests |
 |-------|---------------|
@@ -164,3 +164,9 @@ The dashboard contains 11 panels covering:
 | 9. Column Grouping | Columns grouped by region category |
 | 10. Row Grouping | Rows grouped by tier category |
 | 11. Both Axes Grouped | Column and row grouping simultaneously |
+| 12. Timelapse (CSV) | `timeMode=timelapse` with time series CSV data |
+| 13. Timelapse (Prometheus) | `timeMode=timelapse` with real datasource, `stepInterval=15m` |
+| 14. Animation Playback | `timeMode=timelapse` with `animationSpeedMs=500` |
+| 15. Extra Tooltip Fields | `extraTooltipFields="p50,p99"` adds columns to tooltip |
+| 16. Custom Styling | Non-default `cellPadding=15`, `txtSize=14`, `txtLength=8` |
+| 17. Custom Grouping Headers | Non-default `colCategoryHeaderHeight=160`, `rowCategoryHeaderWidth=140` |

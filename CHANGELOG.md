@@ -31,6 +31,11 @@
 ### Test dashboard
 - Added Panel 9 (column grouping by region), Panel 10 (row grouping by tier),
   Panel 11 (both axes grouped simultaneously)
+- Added Panel 12-14 (timelapse modes with CSV and Prometheus)
+- Added Panel 15 (extra tooltip fields), Panel 16 (custom styling),
+  Panel 17 (custom grouping header sizes)
+- Fixed Panel 7 to actually test migration (removed pre-set sortType)
+- Updated Panels 12-14 from removed time modes to current 'timelapse'
 
 ### Modernized Build system
 - Replaced webpack + 1.7 GB `node_modules` with **bun** (`build.mjs`, ~200 lines)

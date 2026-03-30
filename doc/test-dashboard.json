@@ -719,7 +719,6 @@
         "legendType": "range",
         "nullColor": "#E6E6E6",
         "showLegend": false,
-        "sortType": "natural-asc",
         "sourceField": "source",
         "sourceText": "From",
         "staticColumns": "",
@@ -1092,7 +1091,7 @@
         "type": "grafana-testdata-datasource",
         "uid": "bfg9ri27zj20wb"
       },
-      "description": "Test #12: timeMode=aggregate with mean. The 4 timestamps per pair have varying values, so mean should differ from last. Compare with Panel 1 (last-value default) to verify aggregation works.",
+      "description": "Test #12: timeMode=timelapse with time series CSV. The 4 timestamps per pair show different values at each step. Switch to Anim sub-mode to animate through frames.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -1135,8 +1134,7 @@
         "urlVar2": "",
         "valueField": "value",
         "valueText": "Value",
-        "timeMode": "aggregate",
-        "aggregation": "mean",
+        "timeMode": "timelapse",
         "stepInterval": "60m"
       },
       "pluginVersion": "2.0.2",
@@ -1151,7 +1149,7 @@
           "scenarioId": "csv_content"
         }
       ],
-      "title": "Panel 12: Aggregation (Mean)",
+      "title": "Panel 12: Timelapse (CSV)",
       "type": "esnet-matrix-panel"
     },
     {
@@ -1159,7 +1157,7 @@
         "type": "prometheus",
         "uid": "${DS}"
       },
-      "description": "Test #13: timeMode=stepping with real Prometheus datasource. Edit the query to match your metric/labels. Set sourceField and targetField in panel options to match your label names. Use [<<] [>>] buttons to step through time.",
+      "description": "Test #13: timeMode=timelapse with real Prometheus datasource. Edit the query to match your metric/labels. Set sourceField and targetField in panel options to match your label names. Use Step sub-mode to shift the dashboard time window, or Anim to animate.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -1202,9 +1200,8 @@
         "urlVar2": "",
         "valueField": "",
         "valueText": "Value",
-        "timeMode": "stepping",
-        "aggregation": "mean",
-        "stepInterval": "60m"
+        "timeMode": "timelapse",
+        "stepInterval": "15m"
       },
       "pluginVersion": "2.0.2",
       "targets": [
@@ -1225,7 +1222,7 @@
         "type": "grafana-testdata-datasource",
         "uid": "bfg9ri27zj20wb"
       },
-      "description": "Test #14: timeMode=animate. Uses same time series CSV as Panel 12. Press play to watch the matrix animate through 4 time steps. Each step shows different values/colors.",
+      "description": "Test #14: timeMode=timelapse with animationSpeedMs=500. Uses same time series CSV as Panel 12. Switch to Anim and press play to watch the matrix animate through 4 time steps.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -1268,8 +1265,7 @@
         "urlVar2": "",
         "valueField": "value",
         "valueText": "Value",
-        "timeMode": "animate",
-        "aggregation": "mean",
+        "timeMode": "timelapse",
         "stepInterval": "60m",
         "animationSpeedMs": 500
       },
@@ -1286,6 +1282,207 @@
         }
       ],
       "title": "Panel 14: Animation Playback",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #15: extraTooltipFields='p50,p99' adds extra rows to the cell tooltip. Hover a cell to see From, To, Value, p50, and p99 in the tooltip.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 70 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 74 },
+      "id": 17,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "p50,p99",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Avg Latency"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value,p50,p99\nalpha,one,42,38,120\nalpha,two,67,55,210\nalpha,three,88,80,350\nbeta,one,23,18,95\nbeta,two,51,44,180\nbeta,three,74,65,290\ngamma,one,36,30,140\ngamma,two,95,88,400\ngamma,three,14,10,55",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 15: Extra Tooltip Fields",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #16: Non-default styling -- cellPadding=15 (wide gaps), txtSize=14 (large labels), txtLength=8 (truncation with '...' on longer names).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 70 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 74 },
+      "id": 18,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 15,
+        "cellSize": 30,
+        "defaultColor": "#E6E6E6",
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "From",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "To",
+        "txtLength": 8,
+        "txtSize": 14,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Value"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value\nlong-hostname-alpha,destination-one,10\nlong-hostname-alpha,destination-two,50\nlong-hostname-alpha,destination-three,80\nlong-hostname-beta,destination-one,25\nlong-hostname-beta,destination-two,60\nlong-hostname-beta,destination-three,90\nlong-hostname-gamma,destination-one,5\nlong-hostname-gamma,destination-two,45\nlong-hostname-gamma,destination-three,75",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 16: Custom Styling",
+      "type": "esnet-matrix-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "bfg9ri27zj20wb"
+      },
+      "description": "Test #17: Non-default grouping header sizes -- colCategoryHeaderHeight=160, rowCategoryHeaderWidth=140. Verifies layout adjusts for custom header dimensions.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 25 },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 75 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 14, "w": 16, "x": 0, "y": 83 },
+      "id": 19,
+      "options": {
+        "addUrl": false,
+        "cellPadding": 5,
+        "cellSize": 25,
+        "colCategoryField": "zone",
+        "colCategoryGap": 8,
+        "colCategoryHeaderHeight": 160,
+        "defaultColor": "#E6E6E6",
+        "enableColGrouping": true,
+        "enableRowGrouping": true,
+        "extraTooltipFields": "",
+        "fitToPanel": false,
+        "inputList": false,
+        "legendType": "range",
+        "nullColor": "#E6E6E6",
+        "rowCategoryField": "dept",
+        "rowCategoryGap": 8,
+        "rowCategoryHeaderWidth": 140,
+        "showLegend": true,
+        "sortType": "natural-asc",
+        "sourceField": "source",
+        "sourceText": "Team",
+        "staticColumns": "",
+        "staticRows": "",
+        "targetField": "target",
+        "targetText": "Resource",
+        "txtLength": 50,
+        "txtSize": 10,
+        "url": "",
+        "urlVar1": "",
+        "urlVar2": "",
+        "valueField": "value",
+        "valueText": "Usage %"
+      },
+      "pluginVersion": "2.0.2",
+      "targets": [
+        {
+          "csvContent": "source,target,value,dept,zone\ndev1,res1,20,Engineering,Zone-A\ndev1,res2,55,Engineering,Zone-A\ndev1,res3,80,Engineering,Zone-B\ndev1,res4,35,Engineering,Zone-B\ndev2,res1,45,Engineering,Zone-A\ndev2,res2,70,Engineering,Zone-A\ndev2,res3,15,Engineering,Zone-B\ndev2,res4,90,Engineering,Zone-B\nmkt1,res1,60,Marketing,Zone-A\nmkt1,res2,30,Marketing,Zone-A\nmkt1,res3,85,Marketing,Zone-B\nmkt1,res4,42,Marketing,Zone-B\nops1,res1,75,Operations,Zone-A\nops1,res2,50,Operations,Zone-A\nops1,res3,28,Operations,Zone-B\nops1,res4,65,Operations,Zone-B",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "bfg9ri27zj20wb"
+          },
+          "refId": "A",
+          "scenarioId": "csv_content"
+        }
+      ],
+      "title": "Panel 17: Custom Grouping Headers",
       "type": "esnet-matrix-panel"
     }
   ],
