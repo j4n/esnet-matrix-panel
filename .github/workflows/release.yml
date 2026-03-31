@@ -76,6 +76,7 @@ jobs:
         with:
           draft: true
           generate_release_notes: true
+          append_body: true
           files: |
             ./${{ steps.metadata.outputs.archive }}
             ./${{ steps.metadata.outputs.archive-checksum }}
@@ -94,3 +95,6 @@ jobs:
               - Paste this [.zip.md5 link](https://github.com/${{ github.repository }}/releases/download/v${{ steps.metadata.outputs.plugin-version }}/${{ steps.metadata.outputs.archive-checksum }}) in the MD5 field
 
             Once done please remove these instructions and publish this release.
+
+            ---
+            [Full changelog](https://github.com/${{ github.repository }}/blob/${{ steps.metadata.outputs.github-tag }}/CHANGELOG.md)
