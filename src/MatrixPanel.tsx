@@ -212,16 +212,22 @@ export const MatrixPanel: React.FC<PanelProps<MatrixOptions>> = ({
         };
 
         const response = await new Promise<any>((resolve, reject) => {
-          const sub = ds.query(queryRequest).subscribe({
-            next: (res: any) => resolve(res),
-            error: (err: any) => reject(err),
-            complete: () => {},
-          });
-          // Timeout after 30s
-          setTimeout(() => {
-            sub.unsubscribe();
-            reject(new Error('Lazy fetch timeout'));
-          }, 30000);
+          const result = ds.query(queryRequest);
+          // Grafana >=11 may return a Promise instead of Observable
+          if ('subscribe' in result) {
+            const sub = result.subscribe({
+              next: (res: any) => resolve(res),
+              error: (err: any) => reject(err),
+              complete: () => {},
+            });
+            setTimeout(() => {
+              sub.unsubscribe();
+              reject(new Error('Lazy fetch timeout'));
+            }, 30000);
+          } else {
+            const timeout = setTimeout(() => reject(new Error('Lazy fetch timeout')), 30000);
+            (result as Promise<any>).then(resolve, reject).finally(() => clearTimeout(timeout));
+          }
         });
 
         if (cancelled) { return; }

@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { select } from 'd3-selection';
+import { select, Selection, BaseType } from 'd3-selection';
 
 export const getStyles = (theme: GrafanaTheme2) => ({
   tooltip: css`
@@ -80,11 +80,11 @@ export function moveTooltip(
 /**
  * Truncate D3 text labels to a maximum character length, appending "...".
  */
-export function truncateLabel(
-  text: ReturnType<typeof select>,
+export function truncateLabel<E extends BaseType>(
+  text: Selection<E, unknown, null, undefined>,
   width: number
 ): void {
-  text.each(function (this: SVGTextElement) {
+  text.each(function (this: E) {
     let label = select(this).text();
     if (label.length > width) {
       label = label.slice(0, width) + '...';
