@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v2.1.0-pre
 
 ### Time Series Support
 - **Time modes**: last (default) and timelapse with two sub-modes (step / animate)
