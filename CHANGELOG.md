@@ -65,6 +65,13 @@
 - **Static list crash**: null-guard for undefined `staticRows` / `staticColumns`
 - **Shadowed parameter**: removed duplicate `height` binding in matrix renderer
 
+### CI
+- Bumped `oven-sh/setup-bun` v1 -> v2, `softprops/action-gh-release` v1 -> v2
+  (silence Node.js 20 deprecation warnings)
+- Fixed TypeScript errors surfaced by stricter `@grafana/data` types:
+  `ds.query()` Promise/Observable union (MatrixPanel.tsx), d3-selection
+  generic variance mismatch (tooltip.ts)
+
 ### Code quality (from PR #20)
 - Full TypeScript types for all interfaces (`MatrixOptions`, `CellData`, `ParsedData`, etc.)
 - `const`/`let` throughout, no `var`
