@@ -1,8 +1,17 @@
 # Matrix Panel Plugin
 
-A Grafana panel that renders a 2D matrix showing relationships between two categorical fields (e.g. source x destination). Cell color is driven by a numeric value field and Grafana's threshold system.
+A Grafana panel that renders a 2D matrix showing relationships between two categorical fields, e.g., source x destination. Cell color is driven by a numeric value field and Grafana's threshold system.
 
-This is a fork of [esnet/esnet-matrix-panel](https://github.com/esnet/esnet-matrix-panel) with added time series support: animated timelapse playback (up to 30 days), stepping, and an interactive playback bar. Requires a Prometheus-compatible datasource for timelapse features. Works well for visualizing how relationships between dimensions change over time. Limit is 200 unique rows or columns. Thanks to ESnet for the original plugin. See [CHANGELOG.md](CHANGELOG.md) for a full list of changes.
+This is a fork of [esnet/esnet-matrix-panel](https://github.com/esnet/esnet-matrix-panel) with:
+- added time series support: animated timelapse playback (up to 30 days), stepping, and interactive scrubbing (Requires a Prometheus-compatible datasource).
+- Support for multiple tooltip fields
+- Improved Legends
+- Responsive Design
+- Integrated some long-standing PRs, e.g, for categorized features/grouping, TypeScript codebase, field name pickers
+- A test-dashboard
+- Modernized build system, size-optimizations, bug fixes
+
+See [CHANGELOG.md](CHANGELOG.md) for a full list of changes.
 
 ![Matrix panel screenshot](dist/img/matrix-plugin.webp)
 
@@ -35,11 +44,11 @@ Output goes to `dist/`.
 ## Installing
 
 ```bash
-rsync -a --delete dist/ /var/lib/grafana/plugins/esnet-matrix-panel/ 
+rsync -a --delete dist/ server:/var/lib/grafana/plugins/esnet-matrix-panel/ 
 sudo systemctl restart grafana-server # on server
 ```
 
-Then hard-reload the browser (Ctrl+Shift+R) to pick up the new module.
+Then hard-reload the browser (Ctrl+Shift+R) to pick up the new module, if its not working, try clearing page cache manually or using private browsing.
 
 ## Panel Options
 
@@ -97,6 +106,8 @@ Cell color is determined by the numeric value field and the **Thresholds** confi
 
 ### Time Series
 
+![Time Series Demo](doc/av/demo.webp)
+
 | Option | Description |
 |--------|-------------|
 | **Time Mode** | *Last* (default) shows the most recent value -- no bar, no extra fetches. *Timelapse* shows the playback bar with Step and Anim sub-modes. |
@@ -113,16 +124,12 @@ A single query works for both time modes. Write your query using `$__range` and 
 
 **How this works across modes:**
 
-In **Last mode**, Grafana sends an instant query. Prometheus evaluates `avg_over_time(metric[24h])` once at the current timestamp -- one evaluation covering the full dashboard window. Fast.
+In **Last mode**, Grafana sends an instant query. Prometheus evaluates e.g. `avg_over_time(metric[1h])` once at the current timestamp -- one evaluation covering the full dashboard window. The `$__range` variable is replaced by whatever time range is selected in the dashboard (1h, 6h, 7d, etc.). Fast.
 
 In **Timelapse / Anim sub-mode**, the plugin fetches range data behind the scenes when you click "Anim". To make the animation show real temporal change, it automatically:
 
 1. Switches the query from instant to range (120 evaluation steps)
 2. Rewrites `$__range` to `$__interval` in your expression
-
-This turns `avg_over_time(metric[$__range])` into `avg_over_time(metric[$__interval])`, where `$__interval` is the dashboard time range divided by 120 frames. The dashboard time range picker controls how much history is animated.
-
-Without this rewrite, every frame would compute `avg_over_time(metric[6h])` -- a sliding window equal to the full range -- and all 120 frames would look nearly identical.
 
 | Dashboard time range | Frame interval | PromQL window per frame |
 |----------------------|----------------|-------------------------|
