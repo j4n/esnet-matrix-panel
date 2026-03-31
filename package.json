@@ -1,6 +1,6 @@
 {
   "name": "esnet-matrix-panel",
-  "version": "2.0.2",
+  "version": "2.1.0-pre",
   "description": "ESnet Matrix Panel",
   "scripts": {
     "build": "bun run build.mjs --production",
